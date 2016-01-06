@@ -6,24 +6,29 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class InitiateHelloActivity extends ActionBarActivity {
 
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
-    BroadcastReceiver mReceiver;
+    BroadcastReceiver mReceiver;//registers for the events we want to know about
     IntentFilter mIntentFilter;
     AudioInpu audioCaptureThread;
 
@@ -31,42 +36,44 @@ public class InitiateHelloActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //disconnects the existing wifi connection
-        //WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        //wifi.disconnect();
-
-        //mManager = (WifiP2pManager)getSystemService(Context.WIFI_P2P_SERVICE);
-        //mChannel = mManager.initialize(this, getMainLooper(), null);
-        //mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
-
-        //turns on wifi-direct programatically
-        /*try {
-            Class<?> wifiManager = Class
-                    .forName("android.net.wifi.p2p.WifiP2pManager");
-
-            Method method = wifiManager
-                    .getMethod(
-                            "enableP2p",
-                            new Class[] { android.net.wifi.p2p.WifiP2pManager.Channel.class });
-
-            method.invoke(mManager, mChannel);
-
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }*/
-
         mIntentFilter = new IntentFilter();
         String me = "you";
+
+        //same intents that WifiDirectBroadcastReceiver checks for
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
-        //setupWIFI();
+        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        mChannel = mManager.initialize(this, getMainLooper(), null);
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+        setupWIFI();
+
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_initiate_hello);
 
+    }
+
+    public void setIsWifiDirectEnabled(boolean wifiEnabled)
+    {
+        if(!wifiEnabled)
+        {
+            //update UI status
+            TextView txtStatus = (TextView) findViewById(R.id.textViewStatus);
+            txtStatus.setText("Wifi direct isn't enabled");
+        }
+    }
+
+    /*
+        Populates listViewPeers with in range radios
+     */
+    public void setPeerList(ArrayList peers)
+    {
+        ListView peerView = (ListView) findViewById(R.id.listViewPeers);
+        ArrayAdapter adapter = new ArrayAdapter<WifiP2pDevice>(this,
+                android.R.layout.simple_list_item_1, peers);
+        peerView.setAdapter(adapter);
     }
 
     public void startAudioCapture(View view)
@@ -82,7 +89,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
 
         //Intent intentToStartMic = new Intent(this, HelloRequestService.class);
 
-       // startService(intentToStartMic);
+       //startService(intentToStartMic);
         audioCaptureThread.start();
     }
 
@@ -114,6 +121,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
     /* /Discovers peers for use with wifi direct */
     public void setupWIFI()
     {
+        //sets off the process to discover wifi peers but does not return peer list.
         mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener()
         {
             //notifies you that the discovery process succeeded.
