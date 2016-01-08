@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -39,6 +41,8 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
             peers.clear();
+            Collection<WifiP2pDevice> deviceList = peerList.getDeviceList();
+            mActivity.updateStatus(deviceList.size()+ " peers found.");
             peers.addAll(peerList.getDeviceList());
 
             mActivity.setPeerList(peers);
@@ -58,6 +62,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             if(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED)
             {
                 // Wifi direct is enabled
+                mActivity.setIsWifiDirectEnabled(true);
             }
             else
             {
@@ -67,8 +72,10 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             // fired when list of peers changes
             // Call WifiP2pManager.requestPeers() to get a list of current peers
+            Log.d("Hello", "p2p change");
             if(mManager != null)
             {
+                mActivity.updateStatus("Searching for peers...");
                 mManager.requestPeers(mChannel, peerListListener);
             }
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {

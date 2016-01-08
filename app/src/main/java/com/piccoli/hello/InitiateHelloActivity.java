@@ -10,6 +10,7 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,6 +19,7 @@ import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -48,21 +50,46 @@ public class InitiateHelloActivity extends ActionBarActivity {
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
         mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
-        setupWIFI();
+        //turns on wifi-direct programatically
+        try {
+            Class<?> wifiManager = Class
+                    .forName("android.net.wifi.p2p.WifiP2pManager");
+            Method method = wifiManager
+                    .getMethod(
+                            "enableP2p",
+                            new Class[] { android.net.wifi.p2p.WifiP2pManager.Channel.class });
+            method.invoke(mManager, mChannel);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
 
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_initiate_hello);
-
+        setupWIFI();
     }
 
     public void setIsWifiDirectEnabled(boolean wifiEnabled)
     {
+        TextView txtStatus = (TextView) findViewById(R.id.textViewStatus);
         if(!wifiEnabled)
         {
             //update UI status
-            TextView txtStatus = (TextView) findViewById(R.id.textViewStatus);
-            txtStatus.setText("Wifi direct isn't enabled");
+            updateStatus("Wifi direct enabled");
         }
+        else
+        {
+            updateStatus("Wifi direct enabled");
+        }
+    }
+
+    public void updateStatus(CharSequence info)
+    {
+        TextView txtStatus = (TextView) findViewById(R.id.textViewStatus);
+
+        txtStatus.setText(info);
+
     }
 
     /*
@@ -73,12 +100,18 @@ public class InitiateHelloActivity extends ActionBarActivity {
         ListView peerView = (ListView) findViewById(R.id.listViewPeers);
         ArrayAdapter adapter = new ArrayAdapter<WifiP2pDevice>(this,
                 android.R.layout.simple_list_item_1, peers);
+        int numberOfPeers = peers.size();
+        updateStatus(numberOfPeers + " peers found.");
+        Toast.makeText(InitiateHelloActivity.this, numberOfPeers + " peers found.", Toast.LENGTH_SHORT).show();
+
         peerView.setAdapter(adapter);
     }
 
     public void startAudioCapture(View view)
     {
-        audioCaptureThread = new AudioInpu();
+
+        setupWIFI();
+        /*audioCaptureThread = new AudioInpu();
         Button startButton = (Button) findViewById(R.id.btnStart);
         startButton.setText("Hang up now");
         startButton.setOnClickListener(new View.OnClickListener() {
@@ -90,7 +123,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
         //Intent intentToStartMic = new Intent(this, HelloRequestService.class);
 
        //startService(intentToStartMic);
-        audioCaptureThread.start();
+        audioCaptureThread.start();*/
     }
 
     public void stopCall(View view)
@@ -109,6 +142,8 @@ public class InitiateHelloActivity extends ActionBarActivity {
     @Override
     protected void onResume(){
         super.onResume();
+
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         registerReceiver(mReceiver, mIntentFilter);
     }
 
@@ -122,22 +157,23 @@ public class InitiateHelloActivity extends ActionBarActivity {
     public void setupWIFI()
     {
         //sets off the process to discover wifi peers but does not return peer list.
-        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener()
-        {
-            //notifies you that the discovery process succeeded.
-            @Override public void onSuccess()
-            {
-                //update the listbox of peers.
-                TextView tvs = (TextView) findViewById(R.id.textViewStatus);
-                tvs.setText("P2P Wifi discovery succeeded.");
+        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+                //notifies you that the discovery process succeeded.
+                @Override
+                public void onSuccess() {
+                    //update the listbox of peers.
+                    Toast.makeText(InitiateHelloActivity.this, "Peer discovery initiated", Toast.LENGTH_SHORT).show();
+                    Log.d("hello", "Peer discovery initiated");
+                    updateStatus("Peer discovery initiated");
+                }
 
+                @Override
+                public void onFailure(int reasonCode) {
+                    Toast.makeText(InitiateHelloActivity.this, "Peer discovery failed "+ reasonCode, Toast.LENGTH_SHORT).show();
+                    Log.d("hello", "Peer discovery failed");
+                    updateStatus("Peer discovery failed");
+                }
             }
-            @Override public void onFailure(int reasonCode)
-            {
-                TextView tvs = (TextView) findViewById(R.id.textViewStatus);
-                tvs.setText("P2P Wifi discovery init failed");
-            }
-        }
         );
     }
 
