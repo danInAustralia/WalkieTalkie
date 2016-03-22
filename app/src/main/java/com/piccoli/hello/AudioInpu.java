@@ -1,5 +1,7 @@
 package com.piccoli.hello;
 
+import android.app.IntentService;
+import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -8,6 +10,9 @@ import android.media.MediaRecorder;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -15,7 +20,7 @@ import java.nio.charset.Charset;
 /**
  * Created by d.piccoli on 3/01/2015.
  */
-public class AudioInpu extends Thread
+public class AudioInpu extends IntentService
 {
     private boolean stopped = false;
     public static final String SERVERIP = "134.115.93.89";
@@ -26,7 +31,7 @@ public class AudioInpu extends Thread
      */
     public AudioInpu()
     {
-        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+        super(AudioInpu.class.getName());
         //start();
     }
 
@@ -36,8 +41,7 @@ public class AudioInpu extends Thread
     }
 
     @Override
-    public void run()
-    {
+    protected void onHandleIntent(Intent intent) {
         Log.i("Audio", "Running Audio Thread");
         AudioRecord recorder = null;
         AudioTrack track = null;
@@ -57,9 +61,12 @@ public class AudioInpu extends Thread
             recorder.startRecording();
             //track.play();
             //setup the socket to send the microphone output
-            Socket socket = new Socket();
-            socket.connect(new InetSocketAddress(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT), 5000);
-            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+            //Socket socket = new Socket();
+            DatagramSocket socket = new DatagramSocket();
+            //socket.connect(new InetSocketAddress(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT), 5000);
+            //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+            DatagramPacket packet = null;
+            InetAddress address = InetAddress.getByName(HelloRequestService.SERVERIP);
 
             /*
              * Loops until something outside of this thread stops it.
@@ -75,10 +82,13 @@ public class AudioInpu extends Thread
                 {
                     Log.w("Audio", "Contains value greater than 256");
                 }*/
-                out.write(ShortToByteArray(buffer), 0, buffer.length * 2);
+                //out.write(ShortToByteArray(buffer), 0, buffer.length * 2);
+                packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, address, HelloRequestService.SERVERPORT);
+                socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
             }
-            out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
+            packet = new DatagramPacket("<STOP>".getBytes(Charset.forName("UTF-8")), 7, address, HelloRequestService.SERVERPORT);
+            //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
         }
         catch(Throwable x)
         {
@@ -138,4 +148,6 @@ public class AudioInpu extends Thread
     {
         stopped = true;
     }
+
+
 }

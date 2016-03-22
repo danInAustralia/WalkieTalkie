@@ -34,9 +34,8 @@
             </service>
         -->
         <service
-            android:name=".HelloRequestService"
-            android:exported="false" >
-        </service>
+            android:name=".AudioInpu"
+            android:exported="false" />
     </application>
 
 </manifest>

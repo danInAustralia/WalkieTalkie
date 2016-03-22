@@ -8,6 +8,7 @@ import android.media.AudioManager;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,7 +52,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
         mChannel = mManager.initialize(this, getMainLooper(), null);
         mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         //turns on wifi-direct programatically
-        try {
+        /*try {
             Class<?> wifiManager = Class
                     .forName("android.net.wifi.p2p.WifiP2pManager");
             Method method = wifiManager
@@ -62,12 +63,12 @@ public class InitiateHelloActivity extends ActionBarActivity {
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
 
 
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_initiate_hello);
-        setupWIFI();
+        //setupWIFI();
     }
 
     public void setIsWifiDirectEnabled(boolean wifiEnabled)
@@ -110,8 +111,8 @@ public class InitiateHelloActivity extends ActionBarActivity {
     public void startAudioCapture(View view)
     {
 
-        setupWIFI();
-        /*audioCaptureThread = new AudioInpu();
+        //setupWIFI();
+        //audioCaptureThread = new AudioInpu();
         Button startButton = (Button) findViewById(R.id.btnStart);
         startButton.setText("Hang up now");
         startButton.setOnClickListener(new View.OnClickListener() {
@@ -123,7 +124,9 @@ public class InitiateHelloActivity extends ActionBarActivity {
         //Intent intentToStartMic = new Intent(this, HelloRequestService.class);
 
        //startService(intentToStartMic);
-        audioCaptureThread.start();*/
+        //audioCaptureThread.start();
+        Intent intent = new Intent(Intent.ACTION_SYNC, null, this, AudioInpu.class);
+        startService(intent);
     }
 
     public void stopCall(View view)

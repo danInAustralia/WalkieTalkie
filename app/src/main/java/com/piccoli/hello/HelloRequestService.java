@@ -13,6 +13,9 @@ import android.util.Log;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 
 /**
@@ -115,9 +118,10 @@ public class HelloRequestService extends IntentService {
             recorder.startRecording();
             //track.play();
             //setup the socket to send the microphone output
-            Socket socket = new Socket(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT);
-            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-
+            //Socket socket = new Socket(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT);
+            DatagramSocket socket = new DatagramSocket();
+            //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+            DatagramPacket packet = null;
             /*
              * Loops until something outside of this thread stops it.
              * Reads the data from the recorder and writes it to the audio track for playback.
@@ -128,7 +132,9 @@ public class HelloRequestService extends IntentService {
                 short[] buffer = buffers[ix++ % buffers.length];
                 N = recorder.read(buffer,0,buffer.length);
                 //write the audio to the socket.
-                out.write(ShortToByteArray(buffer), 0, buffer.length * 2);
+                //out.write(ShortToByteArray(buffer), 0, buffer.length * 2);
+                packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, InetAddress.getByName(HelloRequestService.SERVERIP), HelloRequestService.SERVERPORT);
+                socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
             }
         }
