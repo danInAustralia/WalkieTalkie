@@ -3,24 +3,20 @@ package com.piccoli.hello;
 import android.app.IntentService;
 import android.content.Intent;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import java.io.BufferedOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.charset.Charset;
 
 /**
  * Created by d.piccoli on 3/01/2015.
  */
-public class AudioInpu extends IntentService
+public class MicSourceToNetworkService extends IntentService
 {
     private boolean stopped = false;
     public static final String SERVERIP = "134.115.93.89";
@@ -29,9 +25,9 @@ public class AudioInpu extends IntentService
     /**
      * Give the thread high priority so that it's not canceled unexpectedly, and start it
      */
-    public AudioInpu()
+    public MicSourceToNetworkService()
     {
-        super(AudioInpu.class.getName());
+        super(MicSourceToNetworkService.class.getName());
         //start();
     }
 

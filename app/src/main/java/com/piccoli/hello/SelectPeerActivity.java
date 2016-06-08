@@ -1,15 +1,13 @@
 package com.piccoli.hello;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
-import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.os.Handler;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -17,23 +15,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.List;
 
 
-public class InitiateHelloActivity extends ActionBarActivity {
+public class SelectPeerActivity extends Activity {
 
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
     BroadcastReceiver mReceiver;//registers for the events we want to know about
     IntentFilter mIntentFilter;
-    AudioInpu audioCaptureThread;
+    MicSourceToNetworkService audioCaptureThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,7 +98,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
                 android.R.layout.simple_list_item_1, peers);
         int numberOfPeers = peers.size();
         updateStatus(numberOfPeers + " peers found.");
-        Toast.makeText(InitiateHelloActivity.this, numberOfPeers + " peers found.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(SelectPeerActivity.this, numberOfPeers + " peers found.", Toast.LENGTH_SHORT).show();
 
         peerView.setAdapter(adapter);
     }
@@ -112,7 +107,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
     {
 
         //setupWIFI();
-        //audioCaptureThread = new AudioInpu();
+        //audioCaptureThread = new MicSourceToNetworkService();
         Button startButton = (Button) findViewById(R.id.btnStart);
         startButton.setText("Hang up now");
         startButton.setOnClickListener(new View.OnClickListener() {
@@ -125,7 +120,7 @@ public class InitiateHelloActivity extends ActionBarActivity {
 
        //startService(intentToStartMic);
         //audioCaptureThread.start();
-        Intent intent = new Intent(Intent.ACTION_SYNC, null, this, AudioInpu.class);
+        Intent intent = new Intent(Intent.ACTION_SYNC, null, this, MicSourceToNetworkService.class);
         startService(intent);
     }
 
@@ -165,14 +160,14 @@ public class InitiateHelloActivity extends ActionBarActivity {
                 @Override
                 public void onSuccess() {
                     //update the listbox of peers.
-                    Toast.makeText(InitiateHelloActivity.this, "Peer discovery initiated", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SelectPeerActivity.this, "Peer discovery initiated", Toast.LENGTH_SHORT).show();
                     Log.d("hello", "Peer discovery initiated");
                     updateStatus("Peer discovery initiated");
                 }
 
                 @Override
                 public void onFailure(int reasonCode) {
-                    Toast.makeText(InitiateHelloActivity.this, "Peer discovery failed "+ reasonCode, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SelectPeerActivity.this, "Peer discovery failed "+ reasonCode, Toast.LENGTH_SHORT).show();
                     Log.d("hello", "Peer discovery failed");
                     updateStatus("Peer discovery failed");
                 }

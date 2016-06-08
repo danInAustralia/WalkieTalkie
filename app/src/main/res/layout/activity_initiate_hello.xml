@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:paddingLeft="16dp"
     android:paddingRight="16dp"
-    android:orientation="vertical"  tools:context=".InitiateHelloActivity">
+    android:orientation="vertical"  tools:context=".SelectPeerActivity">
 
         <TextView android:id="@+id/textViewInstructions"
             android:text="Select from the list of in-range receivers below"

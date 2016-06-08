@@ -7,12 +7,9 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Created by d.piccoli on 16/12/2014.
@@ -21,13 +18,13 @@ import java.util.List;
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
-    private InitiateHelloActivity mActivity;
+    private SelectPeerActivity mActivity;
 
     private ArrayList peers;
 
     public WifiDirectBroadcastReceiver(WifiP2pManager manager,
                                        WifiP2pManager.Channel channel,
-                                       InitiateHelloActivity activity)
+                                       SelectPeerActivity activity)
     {
         super();
         this.mManager = manager;
