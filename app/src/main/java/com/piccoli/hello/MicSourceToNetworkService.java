@@ -6,6 +6,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.os.Bundle;
 import android.util.Log;
 
 import java.net.DatagramPacket;
@@ -19,7 +20,6 @@ import java.nio.charset.Charset;
 public class MicSourceToNetworkService extends IntentService
 {
     private boolean stopped = false;
-    public static final String SERVERIP = "134.115.93.89";
     public static final int SERVERPORT = 1090;
 
     /**
@@ -38,6 +38,12 @@ public class MicSourceToNetworkService extends IntentService
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        Bundle bundle = intent.getExtras();
+        String ipAddress = bundle.getString("ip_address");
+        MicToIP("134.115.93.89");
+    }
+
+    private void MicToIP(String ipAddress) {
         Log.i("Audio", "Running Audio Thread");
         AudioRecord recorder = null;
         AudioTrack track = null;
@@ -62,7 +68,7 @@ public class MicSourceToNetworkService extends IntentService
             //socket.connect(new InetSocketAddress(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT), 5000);
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             DatagramPacket packet = null;
-            InetAddress address = InetAddress.getByName(HelloRequestService.SERVERIP);
+            InetAddress address = InetAddress.getByName(ipAddress);
 
             /*
              * Loops until something outside of this thread stops it.

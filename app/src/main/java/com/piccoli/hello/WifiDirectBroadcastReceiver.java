@@ -9,18 +9,15 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * Created by d.piccoli on 16/12/2014.
- * allows receival from events (intents) broadcast by the android system.
+ * allows handling of wifi events (intents) broadcast by the android system.
  */
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
     private SelectPeerActivity mActivity;
-
-    private ArrayList peers;
 
     public WifiDirectBroadcastReceiver(WifiP2pManager manager,
                                        WifiP2pManager.Channel channel,
@@ -30,19 +27,30 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
         this.mManager = manager;
         this.mChannel = channel;
         this.mActivity = activity;
-        peers = new ArrayList();
     }
 
     /* activated when requestPeers is called */
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
+            ArrayList<IConnectableDevice> peers = new ArrayList();
             peers.clear();
-            Collection<WifiP2pDevice> deviceList = peerList.getDeviceList();
-            mActivity.updateStatus(deviceList.size()+ " peers found.");
-            peers.addAll(peerList.getDeviceList());
 
-            mActivity.setPeerList(peers);
+
+
+            for(WifiP2pDevice wifiDevice: peerList.getDeviceList())
+            {
+                WifiDirectConnectableDevice device = new WifiDirectConnectableDevice(
+                                                        wifiDevice.deviceAddress,
+                                                        wifiDevice.deviceName,
+                                                        wifiDevice,
+                                                        mManager,
+                                                        mChannel);
+                peers.add(device);
+            }
+            mActivity.updateStatus(peers.size() + " peers found.");
+
+            mActivity.updatePeerList(peers);
         }
     };
 
