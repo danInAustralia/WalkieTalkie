@@ -222,6 +222,8 @@ public class SelectPeerActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
                 updateStatus("Item " + position + " clicked");
+                IConnectableDevice deviceToConnect = peerDevices.get(position);
+                deviceToConnect.InitiateConnection();
             }
         });
     }

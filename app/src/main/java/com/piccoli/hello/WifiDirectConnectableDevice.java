@@ -4,6 +4,8 @@ import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 
+import java.util.Random;
+
 /**
  * Created by d.piccoli on 10/06/2016.
  */
@@ -42,6 +44,11 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
     {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
+
+        //helps in negotiating who will be the wifi group owner.
+        Random r = new Random();
+        config.groupOwnerIntent = r.nextInt(14);
+
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
             @Override
