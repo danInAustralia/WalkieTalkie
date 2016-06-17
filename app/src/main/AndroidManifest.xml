@@ -34,7 +34,9 @@
             </service>
         -->
         <service
-            android:name=".MicSourceToNetworkService"
+            android:name=".FullDuplexNetworkAudioCallService"
+            android:exported="false" />
+        <service android:name=".NetworkAudioCallReceiverService"
             android:exported="false" />
     </application>
 

@@ -6,17 +6,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
-import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,12 +28,14 @@ public class SelectPeerActivity extends Activity {
     WifiP2pManager.Channel mChannel;
     BroadcastReceiver mReceiver;//registers for the events we want to know about
     IntentFilter mIntentFilter;
-    MicSourceToNetworkService audioCaptureThread;
+    FullDuplexNetworkAudioCallService audioCaptureThread;
+    boolean callInitiator = false;
+    Intent makeCallIntent = null;
+    Intent receiveCallIntent = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         mIntentFilter = new IntentFilter();
 
         //same intents that WifiDirectBroadcastReceiver checks for
@@ -57,7 +56,7 @@ public class SelectPeerActivity extends Activity {
                             "enableP2p",
                             new Class[] { android.net.wifi.p2p.WifiP2pManager.Channel.class });
             method.invoke(mManager, mChannel);
-        } catch (Exception e) {
+          } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -66,8 +65,13 @@ public class SelectPeerActivity extends Activity {
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_initiate_hello);
         SetupWidgetListeners();
-        SetPeerList();
+        //SetPeerList();
         setupWIFI();
+
+        //start server
+        //TODO: move this to a 'start on boot' service.
+        receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
+        startService(receiveCallIntent);
     }
 
     /*initialises the peerList and updates the ListView
@@ -76,11 +80,9 @@ public class SelectPeerActivity extends Activity {
     private void SetPeerList()
     {
         peerDevices = new ArrayList<IConnectableDevice>();
-        IConnectableDevice hardCodedMachine = new IPConnectableDevice("134.115.93.89", "Daniel's Computer");
-        peerDevices.add(hardCodedMachine);
 
-        ListView peerView = (ListView) findViewById(R.id.listViewPeers);
-        PopulatePeerView(peerView);
+//        ListView peerView = (ListView) findViewById(R.id.listViewPeers);
+//        PopulatePeerView(peerView);
     }
 
     public void setIsWifiDirectEnabled(boolean wifiEnabled)
@@ -89,10 +91,11 @@ public class SelectPeerActivity extends Activity {
         if(!wifiEnabled)
         {
             //update UI status
-            updateStatus("Wifi direct enabled");
+            updateStatus("Wifi direct not enabled");
         }
         else
         {
+            setupWIFI();
             updateStatus("Wifi direct enabled");
         }
     }
@@ -129,7 +132,7 @@ public class SelectPeerActivity extends Activity {
         ArrayList<String> peerStrings = new ArrayList<String>();
         for(IConnectableDevice dev : peerDevices)
         {
-            peerStrings.add(dev.Name() + " : " + dev.IP_Address() );
+            peerStrings.add(dev.Name()  );
         }
         //populate the ListView
         ArrayAdapter adapter = new ArrayAdapter<String>(this,
@@ -142,52 +145,78 @@ public class SelectPeerActivity extends Activity {
         peerView.setAdapter(adapter);
     }
 
-    public void startAudioCapture(View view)
+    public void startAudioCapture(String ipAddress)
     {
 
         //setupWIFI();
-        //audioCaptureThread = new MicSourceToNetworkService();
-        Button startButton = (Button) findViewById(R.id.btnStart);
-        startButton.setText("Hang up now");
-        startButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                stopCall(v);
-            }
-        });
+        //audioCaptureThread = new FullDuplexNetworkAudioCallService();
+        //Button startButton = (Button) findViewById(R.id.btnStart);
+        //startButton.setText("Hang up now");
+        //startButton.setOnClickListener(new View.OnClickListener() {
+        //    public void onClick(View v) {
+        //        stopCall(v);
+        //    }
+        //});
 
         //Intent intentToStartMic = new Intent(this, HelloRequestService.class);
 
-       //startService(intentToStartMic);
-        //audioCaptureThread.start();
-        Intent intent = new Intent(Intent.ACTION_SYNC, null, this, MicSourceToNetworkService.class);
-        startService(intent);
-    }
+        //startService(intentToStartMic);
 
-    public void stopCall(View view)
-    {
-        audioCaptureThread.Stop();
-        Button startButton = (Button) findViewById(R.id.btnStart);
+        if(callInitiator) {//start a call as client if the peer was selected on this device.
+            updateStatus("Connecting to " + ipAddress);
 
-        startButton.setText("Start transmission");
-        startButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                startAudioCapture(v);
-            }
-        });
+            makeCallIntent= new Intent(Intent.ACTION_SYNC, null, this, FullDuplexNetworkAudioCallService.class);
+            makeCallIntent.putExtra("ip_address", ipAddress);
+            startService(makeCallIntent);
+            callInitiator = false;
+        }
     }
 
     @Override
     protected void onResume(){
         super.onResume();
+        mIntentFilter = new IntentFilter();
 
+        //same intents that WifiDirectBroadcastReceiver checks for
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
         mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         registerReceiver(mReceiver, mIntentFilter);
+        setupWIFI();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(makeCallIntent != null)
+        {
+            stopService(makeCallIntent);
+        }
+        if(receiveCallIntent != null)
+        {
+            stopService(receiveCallIntent);
+        }
+
+        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+
+            }
+
+            @Override
+            public void onFailure(int i) {
+//                    Activity currentActivity = ((MyApp)context.getApplicationContext()).getCurrentActivity();
+//                    Toast.makeText(currentActivity, "WT: Wifi-direct handshake failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     /* /Discovers peers for use with wifi direct */
@@ -200,14 +229,13 @@ public class SelectPeerActivity extends Activity {
                 public void onSuccess() {
                     //update the listbox of peers.
                     Toast.makeText(SelectPeerActivity.this, "Peer discovery initiated", Toast.LENGTH_SHORT).show();
-                    Log.d("hello", "Peer discovery initiated");
                     updateStatus("Peer discovery initiated");
                 }
 
                 @Override
                 public void onFailure(int reasonCode) {
+                    updatePeerList(new ArrayList<IConnectableDevice>());//resets the displayed list to show no peers
                     Toast.makeText(SelectPeerActivity.this, "Peer discovery failed "+ reasonCode, Toast.LENGTH_SHORT).show();
-                    Log.d("hello", "Peer discovery failed");
                     updateStatus("Peer discovery failed");
                 }
             }
@@ -221,8 +249,11 @@ public class SelectPeerActivity extends Activity {
         peerView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                callInitiator = true;
                 updateStatus("Item " + position + " clicked");
                 IConnectableDevice deviceToConnect = peerDevices.get(position);
+                //initiate the connection: does not start sending over the socket until
+                //wifi broadcast receiver figures out the ip address.
                 deviceToConnect.InitiateConnection();
             }
         });

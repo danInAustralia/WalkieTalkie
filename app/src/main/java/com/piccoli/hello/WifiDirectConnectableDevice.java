@@ -1,8 +1,13 @@
 package com.piccoli.hello;
 
+import android.app.Activity;
+import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pGroup;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.widget.Toast;
 
 import java.util.Random;
 
@@ -12,6 +17,7 @@ import java.util.Random;
 public class WifiDirectConnectableDevice implements IConnectableDevice {
     private String ipAddress;
     private String name;
+    private boolean connected;
     private WifiP2pDevice device;
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
@@ -19,12 +25,14 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
     public WifiDirectConnectableDevice(String ip,
                                        String name,
                                        WifiP2pDevice device,
+                                       boolean connected,
                                        WifiP2pManager manager,
                                        WifiP2pManager.Channel channel)
     {
         ipAddress = ip;
         this.name = name;
         this.device = device;
+        this.connected = connected;
         mManager = manager;
         mChannel = channel;
     }
@@ -42,25 +50,40 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
 
     public void InitiateConnection()
     {
-        WifiP2pConfig config = new WifiP2pConfig();
-        config.deviceAddress = device.deviceAddress;
+        //if the device is not yet connected, then connect
+        if(!connected) {
+            WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = device.deviceAddress;
 
-        //helps in negotiating who will be the wifi group owner.
-        Random r = new Random();
-        config.groupOwnerIntent = r.nextInt(14);
+            //helps in negotiating who will be the wifi group owner.
+            Random r = new Random();
+            config.groupOwnerIntent = r.nextInt(1);
 
-        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+            mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
 
-            @Override
-            public void onSuccess() {
-                //success logic
-            }
+                }
 
-            @Override
-            public void onFailure(int reason) {
-                //failure logic
-            }
-        });
-        //Transferring data
+                @Override
+                public void onFailure(int i) {
+//                    Activity currentActivity = ((MyApp)context.getApplicationContext()).getCurrentActivity();
+//                    Toast.makeText(currentActivity, "WT: Wifi-direct handshake failed", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+
+                //success logic: get the IP of the wifi direct group owner
+                @Override
+                public void onSuccess() {
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    //failure logic
+                }
+            });
+        }
     }
 }

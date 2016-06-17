@@ -17,7 +17,7 @@ import java.nio.charset.Charset;
 /**
  * Created by d.piccoli on 3/01/2015.
  */
-public class MicSourceToNetworkService extends IntentService
+public class FullDuplexNetworkAudioCallService extends IntentService
 {
     private boolean stopped = false;
     public static final int SERVERPORT = 1090;
@@ -25,9 +25,9 @@ public class MicSourceToNetworkService extends IntentService
     /**
      * Give the thread high priority so that it's not canceled unexpectedly, and start it
      */
-    public MicSourceToNetworkService()
+    public FullDuplexNetworkAudioCallService()
     {
-        super(MicSourceToNetworkService.class.getName());
+        super(FullDuplexNetworkAudioCallService.class.getName());
         //start();
     }
 
@@ -40,14 +40,14 @@ public class MicSourceToNetworkService extends IntentService
     protected void onHandleIntent(Intent intent) {
         Bundle bundle = intent.getExtras();
         String ipAddress = bundle.getString("ip_address");
-        MicToIP("134.115.93.89");
+        MicToIP(ipAddress);
     }
 
     private void MicToIP(String ipAddress) {
         Log.i("Audio", "Running Audio Thread");
         AudioRecord recorder = null;
         AudioTrack track = null;
-        short[][]   buffers  = new short[256][9600];
+        short[][]   buffers  = new short[256][2048];
         int ix = 0;
 
         /*
@@ -70,13 +70,18 @@ public class MicSourceToNetworkService extends IntentService
             DatagramPacket packet = null;
             InetAddress address = InetAddress.getByName(ipAddress);
 
+            //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
+            //part of protocol to send <GO> to the receiver.
+            byte[] protocolStartStr = "<GO>".getBytes("UTF-8");
+            packet = new DatagramPacket(protocolStartStr, protocolStartStr.length, address, HelloRequestService.SERVERPORT);
+            socket.send(packet);
             /*
              * Loops until something outside of this thread stops it.
              * Reads the data from the recorder and writes it to the audio track for playback.
              */
             while(!stopped)
             {
-                Log.i("Map", "Writing new data to buffer");
+                //Log.i("Map", "Writing new data to buffer");
                 short[] buffer = buffers[ix++ % buffers.length];
                 N = recorder.read(buffer,0,buffer.length);
                 //write the audio to the socket.
@@ -85,6 +90,13 @@ public class MicSourceToNetworkService extends IntentService
                     Log.w("Audio", "Contains value greater than 256");
                 }*/
                 //out.write(ShortToByteArray(buffer), 0, buffer.length * 2);
+//                buffer[0] = -257;
+//                buffer[1] = -256;
+//                buffer[2] = -5;
+//                buffer[3] = 0;
+//                buffer[4] = 7;
+//                buffer[5] = 256;
+//                buffer[6] = 258;
                 packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, address, HelloRequestService.SERVERPORT);
                 socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
