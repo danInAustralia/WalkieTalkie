@@ -1,13 +1,8 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
-import android.app.Activity;
-import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pGroup;
-import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.widget.Toast;
 
 import java.util.Random;
 
@@ -57,7 +52,7 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
 
             //helps in negotiating who will be the wifi group owner.
             Random r = new Random();
-            config.groupOwnerIntent = r.nextInt(1);
+            config.groupOwnerIntent = 1;
 
             mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
                 @Override

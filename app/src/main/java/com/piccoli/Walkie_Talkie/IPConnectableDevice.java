@@ -1,4 +1,4 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
 /**
  * Created by d.piccoli on 9/06/2016.

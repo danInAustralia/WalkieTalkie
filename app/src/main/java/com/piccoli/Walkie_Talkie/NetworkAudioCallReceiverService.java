@@ -1,8 +1,7 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.os.Bundle;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -29,12 +28,17 @@ public class NetworkAudioCallReceiverService extends IntentService {
             DatagramSocket socket = new DatagramSocket(SERVERPORT);
             DatagramPacket packet = new DatagramPacket(data, data.length);
 
-            socket.receive(packet);//locks until a packet is received
+            socket.receive(packet);//locks until an initial packet is received
             String packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
             boolean containsGo = packetText.contains("<GO>");
 
             if(containsGo)
             {
+                //get the caller info from the network
+                packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
+                String peerName = packetText.substring(packetText.indexOf("<peerName>") + "<peerName>".length(),
+                                    packetText.indexOf("</peerName>"));
+
                 Runnable audioReceiveThread = new ReceiveSocketAudioThread(socket);
                 new Thread(audioReceiveThread).start();
             }

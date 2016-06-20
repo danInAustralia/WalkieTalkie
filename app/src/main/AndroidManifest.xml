@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.piccoli.hello" >
+    package="com.piccoli.Walkie_Talkie">
 
     <uses-sdk android:minSdkVersion="14" />
 
@@ -13,14 +13,18 @@
 
     <uses-feature android:name="android.hardware.wifi.direct" />
 
+    <android:uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <android:uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".SelectPeerActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -36,8 +40,11 @@
         <service
             android:name=".FullDuplexNetworkAudioCallService"
             android:exported="false" />
-        <service android:name=".NetworkAudioCallReceiverService"
+        <service
+            android:name=".NetworkAudioCallReceiverService"
             android:exported="false" />
+
+        <activity android:name=".InCallActivity"></activity>
     </application>
 
 </manifest>

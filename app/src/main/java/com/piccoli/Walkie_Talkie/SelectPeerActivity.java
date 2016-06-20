@@ -1,4 +1,4 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -6,9 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -217,6 +217,9 @@ public class SelectPeerActivity extends Activity {
 //                    Toast.makeText(currentActivity, "WT: Wifi-direct handshake failed", Toast.LENGTH_SHORT).show();
             }
         });
+
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.groupOwnerIntent = 15;
     }
 
     /* /Discovers peers for use with wifi direct */

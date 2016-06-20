@@ -1,4 +1,4 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;

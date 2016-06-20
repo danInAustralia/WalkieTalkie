@@ -1,4 +1,4 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
 import android.app.IntentService;
 import android.content.Intent;

@@ -1,4 +1,4 @@
-package com.piccoli.hello;
+package com.piccoli.Walkie_Talkie;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -10,13 +10,9 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.Socket;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
