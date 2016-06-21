@@ -47,7 +47,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService
         Log.i("Audio", "Running Audio Thread");
         AudioRecord recorder = null;
         AudioTrack track = null;
-        short[][]   buffers  = new short[256][2048];
+        short[] buffer  = new short[256];
         int ix = 0;
 
         /*
@@ -82,7 +82,6 @@ public class FullDuplexNetworkAudioCallService extends IntentService
             while(!stopped)
             {
                 //Log.i("Map", "Writing new data to buffer");
-                short[] buffer = buffers[ix++ % buffers.length];
                 N = recorder.read(buffer,0,buffer.length);
                 //write the audio to the socket.
                 /*if(BufferContainsGreaterThan256(buffer))

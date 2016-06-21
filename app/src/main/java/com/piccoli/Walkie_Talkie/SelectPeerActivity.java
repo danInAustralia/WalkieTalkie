@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 
 public class SelectPeerActivity extends Activity {
+    String thisDeviceName;
     ArrayList<IConnectableDevice> peerDevices;
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
@@ -32,6 +33,7 @@ public class SelectPeerActivity extends Activity {
     boolean callInitiator = false;
     Intent makeCallIntent = null;
     Intent receiveCallIntent = null;
+    boolean finishThis = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +74,11 @@ public class SelectPeerActivity extends Activity {
         //TODO: move this to a 'start on boot' service.
         receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
         startService(receiveCallIntent);
+    }
+
+    public void SetDeviceName(String devName)
+    {
+        thisDeviceName = devName;
     }
 
     /*initialises the peerList and updates the ListView
@@ -164,11 +171,18 @@ public class SelectPeerActivity extends Activity {
 
         if(callInitiator) {//start a call as client if the peer was selected on this device.
             updateStatus("Connecting to " + ipAddress);
+            //start in-call activity
+            Intent inCallIntent = new Intent(this, InCallActivity.class);
+            inCallIntent.putExtra("ip_address", ipAddress);
+            inCallIntent.putExtra("peer_name", thisDeviceName);
+            startActivity(inCallIntent);
 
-            makeCallIntent= new Intent(Intent.ACTION_SYNC, null, this, FullDuplexNetworkAudioCallService.class);
-            makeCallIntent.putExtra("ip_address", ipAddress);
-            startService(makeCallIntent);
-            callInitiator = false;
+            finishThis = true;
+
+//            makeCallIntent= new Intent(Intent.ACTION_SYNC, null, this, FullDuplexNetworkAudioCallService.class);
+//            makeCallIntent.putExtra("ip_address", ipAddress);
+//            startService(makeCallIntent);
+//            callInitiator = false;
         }
     }
 
@@ -196,6 +210,8 @@ public class SelectPeerActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        //this.finish();
         if(makeCallIntent != null)
         {
             stopService(makeCallIntent);

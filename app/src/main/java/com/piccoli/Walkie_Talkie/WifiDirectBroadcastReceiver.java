@@ -108,6 +108,9 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
+            WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+            String thisDeviceName = device.deviceName;
+            mActivity.SetDeviceName(thisDeviceName);
         }
     }
 }

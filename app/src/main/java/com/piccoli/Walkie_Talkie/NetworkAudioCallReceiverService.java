@@ -35,9 +35,9 @@ public class NetworkAudioCallReceiverService extends IntentService {
             if(containsGo)
             {
                 //get the caller info from the network
-                packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
-                String peerName = packetText.substring(packetText.indexOf("<peerName>") + "<peerName>".length(),
-                                    packetText.indexOf("</peerName>"));
+//                packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
+//                String peerName = packetText.substring(packetText.indexOf("<peerName>") + "<peerName>".length(),
+//                                    packetText.indexOf("</peerName>"));
 
                 Runnable audioReceiveThread = new ReceiveSocketAudioThread(socket);
                 new Thread(audioReceiveThread).start();

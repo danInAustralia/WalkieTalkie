@@ -23,26 +23,35 @@ public class ReceiveSocketAudioThread implements Runnable
 
     public void run()
     {
-        byte[] bytes = new byte[2048];
+        boolean firstIteration = true;
         short[] shortArr;
         int ix = 0;
-        //reads packets from the network and sends to the speaker
-        DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length);
+
         int N = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        //reads packets from the network and sends to the speaker
+        byte[] bytes = new byte[512];
+        DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length);
+        int n = 0;//number of samples written
         AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 48000,
-                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N*10, AudioTrack.MODE_STREAM);
-        track.play();
-        while(true)
-        {
-            try {
+                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N*2, AudioTrack.MODE_STREAM);
+
+        try {
+            while (true) {
                 callScoket.receive(receivedPacket);
                 bytes = receivedPacket.getData();
                 shortArr = ByteArrayToShortArray(bytes);
 
-                track.write(shortArr, 0, shortArr.length);//sends to default speaker.
-            } catch (IOException e) {
-                e.printStackTrace();
+                n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
+                if(firstIteration)
+                {
+                    track.play();
+                    firstIteration = false;
+                }
             }
+        }catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            track.release();
         }
     }
 
