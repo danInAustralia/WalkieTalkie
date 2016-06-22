@@ -112,5 +112,9 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             String thisDeviceName = device.deviceName;
             mActivity.SetDeviceName(thisDeviceName);
         }
+        else if (action == "WT.END_CALL")
+        {
+            mActivity.EndCall();
+        }
     }
 }
