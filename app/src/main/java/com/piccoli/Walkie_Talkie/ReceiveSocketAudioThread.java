@@ -1,5 +1,7 @@
 package com.piccoli.Walkie_Talkie;
 
+import android.content.Intent;
+import android.app.Activity;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -15,7 +17,6 @@ import java.net.DatagramSocket;
 public class ReceiveSocketAudioThread implements Runnable
 {
     DatagramSocket callScoket;
-
     public ReceiveSocketAudioThread(DatagramSocket socket)
     {
         callScoket = socket;
@@ -26,6 +27,7 @@ public class ReceiveSocketAudioThread implements Runnable
         boolean firstIteration = true;
         short[] shortArr;
         int ix = 0;
+        boolean stopped = false;
 
         int N = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         //reads packets from the network and sends to the speaker
@@ -36,16 +38,27 @@ public class ReceiveSocketAudioThread implements Runnable
                 AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N*2, AudioTrack.MODE_STREAM);
 
         try {
-            while (true) {
+            while (!stopped) {
                 callScoket.receive(receivedPacket);
                 bytes = receivedPacket.getData();
-                shortArr = ByteArrayToShortArray(bytes);
+                String s = new String(bytes, "UTF-8");
+                boolean containsStop = s.contains("<STOP>");
 
-                n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
-                if(firstIteration)
+                if(containsStop)
                 {
-                    track.play();
-                    firstIteration = false;
+                    stopped = true;
+
+
+                }
+                else//convert to packet to audio and play it.
+                {
+                    shortArr = ByteArrayToShortArray(bytes);
+
+                    n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
+                    if (firstIteration) {
+                        track.play();
+                        firstIteration = false;
+                    }
                 }
             }
         }catch (IOException e) {

@@ -198,7 +198,7 @@ public class SelectPeerActivity extends Activity {
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        mIntentFilter.addAction("WT.END_CALL");//listens for our custom end call intent
+        mIntentFilter.addAction("WT.END_CALL_COMPLETE");//listens for our custom end call intent
         mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         this.registerReceiver(mReceiver, mIntentFilter);
         setupWIFI();
@@ -245,14 +245,14 @@ public class SelectPeerActivity extends Activity {
     {
         Toast.makeText(SelectPeerActivity.this, "Call Ended", Toast.LENGTH_SHORT).show();
         //this.finish();
-        if(makeCallIntent != null)
-        {
-            stopService(makeCallIntent);
-        }
-        if(receiveCallIntent != null)
-        {
-            stopService(receiveCallIntent);
-        }
+//        if(makeCallIntent != null)
+//        {
+//            stopService(makeCallIntent);
+//        }
+//        if(receiveCallIntent != null)
+//        {
+//            stopService(receiveCallIntent);
+//        }
         mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {

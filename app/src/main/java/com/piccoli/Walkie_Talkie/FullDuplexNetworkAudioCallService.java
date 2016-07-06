@@ -1,7 +1,9 @@
 package com.piccoli.Walkie_Talkie;
 
 import android.app.IntentService;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
@@ -17,11 +19,12 @@ import java.nio.charset.Charset;
 /**
  * Created by d.piccoli on 3/01/2015.
  */
-public class FullDuplexNetworkAudioCallService extends IntentService
+public class FullDuplexNetworkAudioCallService extends IntentService implements ICallService
 {
     private boolean stopped = false;
     public static final int SERVERPORT = 1090;
 
+    BroadcastReceiver mReceiver;//registers for the events we want to know about
     /**
      * Give the thread high priority so that it's not canceled unexpectedly, and start it
      */
@@ -29,6 +32,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService
     {
         super(FullDuplexNetworkAudioCallService.class.getName());
         //start();
+
     }
 
     public void Stop()
@@ -39,6 +43,12 @@ public class FullDuplexNetworkAudioCallService extends IntentService
     @Override
     protected void onHandleIntent(Intent intent) {
         Bundle bundle = intent.getExtras();
+
+        IntentFilter mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction("WT.END_CALL");//listens for our custom end call intent
+
+        mReceiver = new CallStatusBroadcastReceiver(this);
+        registerReceiver(mReceiver, mIntentFilter);
         String ipAddress = bundle.getString("ip_address");
         MicToIP(ipAddress);
     }
@@ -84,23 +94,20 @@ public class FullDuplexNetworkAudioCallService extends IntentService
                 //Log.i("Map", "Writing new data to buffer");
                 N = recorder.read(buffer,0,buffer.length);
                 //write the audio to the socket.
-                /*if(BufferContainsGreaterThan256(buffer))
-                {
-                    Log.w("Audio", "Contains value greater than 256");
-                }*/
-                //out.write(ShortToByteArray(buffer), 0, buffer.length * 2);
-//                buffer[0] = -257;
-//                buffer[1] = -256;
-//                buffer[2] = -5;
-//                buffer[3] = 0;
-//                buffer[4] = 7;
-//                buffer[5] = 256;
-//                buffer[6] = 258;
+
                 packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, address, HelloRequestService.SERVERPORT);
                 socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
             }
-            packet = new DatagramPacket("<STOP>".getBytes(Charset.forName("UTF-8")), 7, address, HelloRequestService.SERVERPORT);
+//            recorder.stop();
+//            recorder.release();
+            byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
+            packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, address, HelloRequestService.SERVERPORT);
+            socket.send(packet);
+            socket.close();
+//            Intent stopWTIntent = new Intent();
+//            stopWTIntent.setAction("WT.END_CALL_COMPLETE");
+//            sendBroadcast(stopWTIntent);
             //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
         }
         catch(Throwable x)
@@ -114,6 +121,10 @@ public class FullDuplexNetworkAudioCallService extends IntentService
         {
             recorder.stop();
             recorder.release();
+
+            Intent stopWTIntent = new Intent();
+            stopWTIntent.setAction("WT.END_CALL_COMPLETE");
+            sendBroadcast(stopWTIntent);
             //track.stop();
             //track.release();
         }
