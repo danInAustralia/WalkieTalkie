@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.wifi.p2p.WifiP2pConfig;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.view.Menu;
@@ -24,11 +25,14 @@ import java.util.ArrayList;
 
 public class SelectPeerActivity extends Activity {
     String thisDeviceName;
+    IConnectableDevice selectedDevice;
     ArrayList<IConnectableDevice> peerDevices;
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
-    BroadcastReceiver mReceiver;//registers for the events we want to know about
+    BroadcastReceiver mWifiDirectBroadcastReceiver;//registers for the events we want to know about
+    BroadcastReceiver mCallEndBroadcastReceiver;
     IntentFilter mIntentFilter;
+    IntentFilter mCallEndIntentFilter;
     FullDuplexNetworkAudioCallService audioCaptureThread;
     boolean callInitiator = false;
     Intent makeCallIntent = null;
@@ -39,18 +43,20 @@ public class SelectPeerActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mIntentFilter = new IntentFilter();
+        mCallEndIntentFilter = new IntentFilter();
 
         //same intents that WifiDirectBroadcastReceiver checks for
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        mIntentFilter.addAction("WT.END_CALL");//listens for our custom end call intent
+        mCallEndIntentFilter.addAction("WT.END_CALL_COMPLETE");//listens for our custom end call intent
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
-        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
-        registerReceiver(mReceiver, mIntentFilter);
+        mWifiDirectBroadcastReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+        mCallEndBroadcastReceiver = new CallEndedBroadcastReceiver(this);
+        registerReceiver(mWifiDirectBroadcastReceiver, mCallEndIntentFilter);
         //turns on wifi-direct programatically
         try {
             Class<?> wifiManager = Class
@@ -71,6 +77,7 @@ public class SelectPeerActivity extends Activity {
         SetupWidgetListeners();
         //SetPeerList();
         setupWIFI();
+        deletePersistentGroups();
 
         //start server
         //TODO: move this to a 'start on boot' service.
@@ -176,7 +183,9 @@ public class SelectPeerActivity extends Activity {
             //start in-call activity
             Intent inCallIntent = new Intent(this, InCallActivity.class);
             inCallIntent.putExtra("ip_address", ipAddress);
-            inCallIntent.putExtra("peer_name", thisDeviceName);
+            inCallIntent.putExtra("peer_name", selectedDevice.Name());
+            inCallIntent.putExtra("this_device_name", thisDeviceName);
+            inCallIntent.putExtra("initiator", "true");
             startActivity(inCallIntent);
 
             finishThis = true;
@@ -184,6 +193,7 @@ public class SelectPeerActivity extends Activity {
 //            makeCallIntent= new Intent(Intent.ACTION_SYNC, null, this, FullDuplexNetworkAudioCallService.class);
 //            makeCallIntent.putExtra("ip_address", ipAddress);
 //            startService(makeCallIntent);
+            selectedDevice = null;
             callInitiator = false;
         }
     }
@@ -192,22 +202,27 @@ public class SelectPeerActivity extends Activity {
     protected void onResume(){
         super.onResume();
         mIntentFilter = new IntentFilter();
+        mCallEndIntentFilter = new IntentFilter();
 
         //same intents that WifiDirectBroadcastReceiver checks for
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        mIntentFilter.addAction("WT.END_CALL_COMPLETE");//listens for our custom end call intent
-        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
-        this.registerReceiver(mReceiver, mIntentFilter);
+        mWifiDirectBroadcastReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+        this.registerReceiver(mWifiDirectBroadcastReceiver, mIntentFilter);
+
+        mCallEndIntentFilter.addAction("WT.END_CALL_COMPLETE");//listens for our custom end call intent
+        mCallEndBroadcastReceiver = new CallEndedBroadcastReceiver(this);
+        registerReceiver(mCallEndBroadcastReceiver, mCallEndIntentFilter);
         setupWIFI();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(mReceiver);
+        unregisterReceiver(mWifiDirectBroadcastReceiver);
+        unregisterReceiver(mCallEndBroadcastReceiver);
     }
 
     @Override
@@ -224,21 +239,11 @@ public class SelectPeerActivity extends Activity {
             stopService(receiveCallIntent);
         }
 
-        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
 
-            }
+        StopWifiDirect();
 
-            @Override
-            public void onFailure(int i) {
-//                    Activity currentActivity = ((MyApp)context.getApplicationContext()).getCurrentActivity();
-//                    Toast.makeText(currentActivity, "WT: Wifi-direct handshake failed", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        WifiP2pConfig config = new WifiP2pConfig();
-        config.groupOwnerIntent = 15;
+        //WifiP2pConfig config = new WifiP2pConfig();
+        //config.groupOwnerIntent = 15;
     }
 
     public void EndCall()
@@ -253,6 +258,11 @@ public class SelectPeerActivity extends Activity {
 //        {
 //            stopService(receiveCallIntent);
 //        }
+
+        StopWifiDirect();
+    }
+
+    public void StopWifiDirect() {
         mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -266,6 +276,24 @@ public class SelectPeerActivity extends Activity {
 //                    Toast.makeText(currentActivity, "WT: Wifi-direct handshake failed", Toast.LENGTH_SHORT).show();
             }
         });
+        deletePersistentGroups();
+    }
+
+    //Hacky to get android to forget previously connected devices and who was group owner.
+    private void deletePersistentGroups(){
+        try {
+            Method[] methods = WifiP2pManager.class.getMethods();
+            for (int i = 0; i < methods.length; i++) {
+                if (methods[i].getName().equals("deletePersistentGroup")) {
+                    // Delete any persistent group
+                    for (int netid = 0; netid < 32; netid++) {
+                        methods[i].invoke(mManager, mChannel, netid, null);
+                    }
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /* /Discovers peers for use with wifi direct */
@@ -301,6 +329,8 @@ public class SelectPeerActivity extends Activity {
                 callInitiator = true;
                 updateStatus("Item " + position + " clicked");
                 IConnectableDevice deviceToConnect = peerDevices.get(position);
+                selectedDevice = deviceToConnect;
+
                 //initiate the connection: does not start sending over the socket until
                 //wifi broadcast receiver figures out the ip address.
                 deviceToConnect.InitiateConnection();

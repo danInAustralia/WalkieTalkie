@@ -59,6 +59,14 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
 //                packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
 //                String peerName = packetText.substring(packetText.indexOf("<peerName>") + "<peerName>".length(),
 //                                    packetText.indexOf("</peerName>"));
+                String deviceName = packetText.substring(
+                        packetText.indexOf("<GO>") + "<GO>".length(), packetText.indexOf("</GO>"));
+                Intent inCallIntent = new Intent(this, InCallActivity.class);
+                inCallIntent.putExtra("ip_address", "NA");
+                inCallIntent.putExtra("initiator", "false");
+                inCallIntent.putExtra("peer_name", deviceName);
+                inCallIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(inCallIntent);
                 ReceiveAudio(socket);
                 //Runnable audioReceiveThread = new ReceiveSocketAudioThread(socket);
                 //new Thread(audioReceiveThread).start();
@@ -83,13 +91,13 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
         int n = 0;//number of samples written
         AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 48000,
                 AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N * 2, AudioTrack.MODE_STREAM);
-
+        boolean containsStop = false;
         try {
             while (!stopped) {
                 callSocket.receive(receivedPacket);
                 bytes = receivedPacket.getData();
                 String s = new String(bytes, "UTF-8");
-                boolean containsStop = s.contains("<STOP>");
+                containsStop = s.contains("<STOP>");
 
                 if (containsStop) {
                     stopped = true;
@@ -106,13 +114,22 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
                     }
                 }
             }
+            if(!containsStop)//the stop request came from the local network, not from the network.
+            {//therefore, we must send "STOP" to the peer.
+                byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
+                DatagramPacket packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, callSocket.getInetAddress(), HelloRequestService.SERVERPORT);
+                callSocket.send(packet);
+                SendEndCallBroadcast();
+            }
 
-            callSocket.close();
+            //callSocket.close();
             //track.release();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            callSocket.close();
             track.release();
+            SendEndCallBroadcast();
         }
     }
 

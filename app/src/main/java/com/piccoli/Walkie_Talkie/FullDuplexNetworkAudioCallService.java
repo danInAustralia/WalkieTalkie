@@ -50,10 +50,11 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
         mReceiver = new CallStatusBroadcastReceiver(this);
         registerReceiver(mReceiver, mIntentFilter);
         String ipAddress = bundle.getString("ip_address");
-        MicToIP(ipAddress);
+        String peerName = bundle.getString("device_name");
+        MicToIP(ipAddress, peerName);
     }
 
-    private void MicToIP(String ipAddress) {
+    private void MicToIP(String ipAddress, String peerName) {
         Log.i("Audio", "Running Audio Thread");
         AudioRecord recorder = null;
         AudioTrack track = null;
@@ -82,7 +83,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
 
             //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
             //part of protocol to send <GO> to the receiver.
-            byte[] protocolStartStr = "<GO>".getBytes("UTF-8");
+            byte[] protocolStartStr = ("<GO>"+peerName+"</GO>").getBytes("UTF-8");
             packet = new DatagramPacket(protocolStartStr, protocolStartStr.length, address, HelloRequestService.SERVERPORT);
             socket.send(packet);
             /*

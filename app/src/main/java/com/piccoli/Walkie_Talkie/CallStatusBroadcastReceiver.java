@@ -14,27 +14,29 @@ import java.util.ArrayList;
 
 /**
  * Created by d.piccoli on 05/07/2016
- * allows handling of wifi events (intents) broadcast by the android system.
+ * calls Stop function of ICallService when END_CALL broadcast is detected
  */
 public class CallStatusBroadcastReceiver extends BroadcastReceiver{
 
-    ICallService callService;
+        ICallService callService;
 
-    public CallStatusBroadcastReceiver(ICallService cs
-                                        )
-    {
-        super();
-        callService = cs;
-    }
-
-    @Override
-    public void onReceive(Context context, Intent intent)
-    {
-        String action = intent.getAction();
-
-        if (action == "WT.END_CALL")
+        public CallStatusBroadcastReceiver(ICallService cs
+        )
         {
-            callService.Stop();
+            super();
+            callService = cs;
         }
-    }
+
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String action = intent.getAction();
+
+            if (action == "WT.END_CALL")
+            {
+                callService.Stop();
+            }
+        }
 }
+
+
