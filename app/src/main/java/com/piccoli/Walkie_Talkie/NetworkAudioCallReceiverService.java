@@ -14,6 +14,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 
 /**
@@ -25,6 +26,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
 
     public static final int SERVERPORT = 1090;
     boolean stopped = false;
+    InetAddress addressOfPeer = null;
 
     BroadcastReceiver mReceiver;//registers for the events we want to know about
 
@@ -49,7 +51,10 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
             DatagramSocket socket = new DatagramSocket(SERVERPORT);
             DatagramPacket packet = new DatagramPacket(data, data.length);
 
+            packet.getAddress();
+
             socket.receive(packet);//locks until an initial packet is received
+            addressOfPeer = packet.getAddress();
             String packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
             boolean containsGo = packetText.contains("<GO>");
 
@@ -114,13 +119,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
                     }
                 }
             }
-            if(!containsStop)//the stop request came from the local network, not from the network.
-            {//therefore, we must send "STOP" to the peer.
-                byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
-                DatagramPacket packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, callSocket.getInetAddress(), HelloRequestService.SERVERPORT);
-                callSocket.send(packet);
-                SendEndCallBroadcast();
-            }
+
 
             //callSocket.close();
             //track.release();
@@ -136,6 +135,18 @@ public class NetworkAudioCallReceiverService extends IntentService implements IC
     public void Stop()
     {
         stopped = true;
+        if(addressOfPeer != null) {
+            //therefore, we must send "STOP" to the peer.
+            try {
+                DatagramSocket socket = new DatagramSocket(SERVERPORT);
+                byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
+                DatagramPacket packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, addressOfPeer, HelloRequestService.SERVERPORT);
+                //callSocket.send(packet);
+                SendEndCallBroadcast();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void SendEndCallBroadcast()

@@ -47,7 +47,7 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
     {
         //if the device is not yet connected, then connect
         if(!connected) {
-            WifiP2pConfig config = new WifiP2pConfig();
+            final WifiP2pConfig config = new WifiP2pConfig();
             config.deviceAddress = device.deviceAddress;
 
             //helps in negotiating who will be the wifi group owner.
@@ -72,6 +72,7 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
                 //success logic: get the IP of the wifi direct group owner
                 @Override
                 public void onSuccess() {
+                    config.groupOwnerIntent = 15;
                 }
 
                 @Override

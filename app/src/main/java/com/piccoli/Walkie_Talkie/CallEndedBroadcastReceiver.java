@@ -21,7 +21,8 @@ public class CallEndedBroadcastReceiver extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (action == "WT.END_CALL_COMPLETE") {
-            mActivity.StopWifiDirect();
+            mActivity.EndCall();
+            mActivity.setupWIFI();
         }
     }
 }

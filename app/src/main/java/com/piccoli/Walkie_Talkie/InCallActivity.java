@@ -14,6 +14,8 @@ import java.util.Objects;
 public class InCallActivity extends Activity {
 
     Intent makeCallIntent = null;
+    CallEndedForInCallBroadcastReceiver callEndedBR;
+    IntentFilter mCallEndIntentFilter;
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -24,7 +26,7 @@ public class InCallActivity extends Activity {
         String peerName = intent.getStringExtra("peer_name");
         String myDeviceName = intent.getStringExtra("this_device_name");
         String initiator = intent.getStringExtra("initiator");
-        boolean callInitiator = Objects.equals(initiator, "true");
+        boolean callInitiator = initiator.equals("true");//Objects.equals(initiator, "true");
 
         if(callInitiator) {
             makeCallIntent = new Intent(Intent.ACTION_SYNC, null, this, FullDuplexNetworkAudioCallService.class);
@@ -37,9 +39,25 @@ public class InCallActivity extends Activity {
 
         }
 
+        mCallEndIntentFilter = new IntentFilter();
+        mCallEndIntentFilter.addAction("WT.END_CALL_COMPLETE");//listens for our custom end call intent
+        callEndedBR = new CallEndedForInCallBroadcastReceiver(this);
+
         setContentView(R.layout.activity_in_call);
         TextView callerText = (TextView) findViewById(R.id.textViewCaller);
         callerText.setText(peerName);
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        registerReceiver(callEndedBR, mCallEndIntentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(callEndedBR);
     }
 
     public void btnEndPressed(View view)
@@ -47,6 +65,11 @@ public class InCallActivity extends Activity {
         Intent stopWTIntent = new Intent();
         stopWTIntent.setAction("WT.END_CALL");
         sendBroadcast(stopWTIntent);
+        finish();
+    }
+
+    public void Stop()
+    {
         finish();
     }
 

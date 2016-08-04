@@ -20,6 +20,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
     private SelectPeerActivity mActivity;
+    private boolean connected = false;
 
     public WifiDirectBroadcastReceiver(WifiP2pManager manager,
                                        WifiP2pManager.Channel channel,
@@ -80,11 +81,12 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             // fired when list of peers changes
             // Call WifiP2pManager.requestPeers() to get a list of current peers
-            Log.d("Hello", "p2p change");
-            if(mManager != null)
-            {
-                mActivity.updateStatus("Searching for peers...");
-                mManager.requestPeers(mChannel, peerListListener);
+            if(!connected) {
+                Log.d("Hello", "p2p change");
+                if (mManager != null) {
+                    mActivity.updateStatus("Searching for peers...");
+                    mManager.requestPeers(mChannel, peerListListener);
+                }
             }
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             // Respond to new connection or disconnections
@@ -95,6 +97,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
                     .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
             if (networkInfo.isConnected()) {
+                connected = true;
                 // We are connected with the other device, request connection
                 // info to find group owner IP
 
@@ -106,15 +109,19 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
                     }
                 });
             }
+            else
+            {
+                connected = false;
+            }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
             WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
             String thisDeviceName = device.deviceName;
             mActivity.SetDeviceName(thisDeviceName);
         }
-        else if (action == "WT.END_CALL_COMPLETE")
-        {
-            mActivity.EndCall();
-        }
+//        else if (action == "WT.END_CALL_COMPLETE")
+//        {
+//            mActivity.EndCall();
+//        }
     }
 }

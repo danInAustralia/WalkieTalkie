@@ -52,6 +52,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
         String ipAddress = bundle.getString("ip_address");
         String peerName = bundle.getString("device_name");
         MicToIP(ipAddress, peerName);
+
     }
 
     private void MicToIP(String ipAddress, String peerName) {
