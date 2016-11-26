@@ -18,9 +18,9 @@ import java.util.ArrayList;
  */
 public class CallStatusBroadcastReceiver extends BroadcastReceiver{
 
-        ICallService callService;
+        IStoppable callService;
 
-        public CallStatusBroadcastReceiver(ICallService cs
+        public CallStatusBroadcastReceiver(IStoppable cs
         )
         {
             super();

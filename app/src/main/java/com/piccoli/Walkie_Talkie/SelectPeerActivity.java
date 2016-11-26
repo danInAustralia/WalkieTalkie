@@ -1,15 +1,19 @@
 package com.piccoli.Walkie_Talkie;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +39,7 @@ public class SelectPeerActivity extends Activity {
     IntentFilter mCallEndIntentFilter;
     FullDuplexNetworkAudioCallService audioCaptureThread;
     boolean callInitiator = false;
+    boolean instigatedWifiDisconnect = false;
     Intent makeCallIntent = null;
     Intent receiveCallIntent = null;
     boolean finishThis = false;
@@ -125,8 +130,11 @@ public class SelectPeerActivity extends Activity {
     }
 
     /*
+        updatePeerList
         Populates listViewPeers with in range radios and updates the listview.
         this does too much.
+
+        Called from the WifiDriectBroadcastReceiver when the list of peers is queried.
      */
     public void updatePeerList(ArrayList<IConnectableDevice> peers)
     {
@@ -142,7 +150,9 @@ public class SelectPeerActivity extends Activity {
 
     }
 
-    //draws the list of peers in the ListView
+    /*
+    draws the list of peers in the ListView
+     */
     private void PopulatePeerView(ListView peerView) {
         //convert peerDevices to strings
         ArrayList<String> peerStrings = new ArrayList<String>();
@@ -150,6 +160,7 @@ public class SelectPeerActivity extends Activity {
         {
             peerStrings.add(dev.Name()  );
         }
+
         //populate the ListView
         ArrayAdapter adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1, peerStrings);
@@ -161,24 +172,20 @@ public class SelectPeerActivity extends Activity {
         peerView.setAdapter(adapter);
     }
 
+    /*
+    *  startAudioCapture: this is called just after the wifi-direct connection has been established
+    *   - parameter ipAddress (the ip address of the wifi direct group owner.
+     *  - Updates the screen
+     *  - starts the inCallIntent if this is the call initiator
+     *  This should be called on both the server and the client, but the call will only be
+     *  started on the initiator.
+    * */
     public void startAudioCapture(String ipAddress)
     {
+        updateStatus("Connected over Wifi direct");
 
-        //setupWIFI();
-        //audioCaptureThread = new FullDuplexNetworkAudioCallService();
-        //Button startButton = (Button) findViewById(R.id.btnStart);
-        //startButton.setText("Hang up now");
-        //startButton.setOnClickListener(new View.OnClickListener() {
-        //    public void onClick(View v) {
-        //        stopCall(v);
-        //    }
-        //});
-
-        //Intent intentToStartMic = new Intent(this, HelloRequestService.class);
-
-        //startService(intentToStartMic);
-
-        if(callInitiator) {//start a call as client if the peer was selected on this device.
+        if(false)//(callInitiator)
+        {//start a call as client if the peer was selected on this device.
             updateStatus("Connecting to " + ipAddress);
             //start in-call activity
             Intent inCallIntent = new Intent(this, InCallActivity.class);
@@ -196,7 +203,68 @@ public class SelectPeerActivity extends Activity {
             selectedDevice = null;
             callInitiator = false;
         }
+
+        //stop discovery.
+
+
+        // 1. Instantiate an AlertDialog.Builder with its constructor
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+// 2. Chain together various setter methods to set the dialog characteristics
+
+        builder.setMessage("Click to disconnect")
+                .setTitle("Wifi direct connected");
+
+        builder.setPositiveButton("Disconnect", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+                instigatedWifiDisconnect = true;
+                disconnect();
+                // User clicked OK button
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog
+            }
+        });
+
+// 3. Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
+
+
+
+    public void handleLostConnection()
+    {
+        if(!instigatedWifiDisconnect)
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+    // 2. Chain together various setter methods to set the dialog characteristics
+
+            builder.setMessage("Wifi connection lost")
+                    .setTitle("Wifi connection lost");
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        instigatedWifiDisconnect = false;
+    }
+
+    /*public void StopPeerDiscovery(){
+        mManager.stopPeerDiscovery(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.d(WiFiDirectActivity.TAG,"Stopped Peer discovery");
+            }
+
+            @Override
+            public void onFailure(int i) {
+                Log.d(WiFiDirectActivity.TAG,"Not Stopped Peer discovery");
+            }
+        });
+    }*/
 
     @Override
     protected void onResume(){
@@ -230,6 +298,7 @@ public class SelectPeerActivity extends Activity {
         super.onDestroy();
 
         //this.finish();
+        /*
         if(makeCallIntent != null)
         {
             stopService(makeCallIntent);
@@ -240,7 +309,7 @@ public class SelectPeerActivity extends Activity {
         }
 
 
-        StopWifiDirect();
+        StopWifiDirect();*/
 
         //WifiP2pConfig config = new WifiP2pConfig();
         //config.groupOwnerIntent = 15;
@@ -277,6 +346,35 @@ public class SelectPeerActivity extends Activity {
             }
         });
         deletePersistentGroups();
+    }
+
+    /*
+    * Disconnects from the wifi direct.
+    * This should be called by the group owner
+    * */
+    public void disconnect() {
+        if (mManager != null && mChannel != null) {
+            mManager.requestGroupInfo(mChannel, new WifiP2pManager.GroupInfoListener() {
+                @Override
+                public void onGroupInfoAvailable(WifiP2pGroup group) {
+                    if (group != null && mManager != null && mChannel != null
+                            && group.isGroupOwner()) {
+                        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+
+                            @Override
+                            public void onSuccess() {
+                                Log.d("Msg" , "removeGroup onSuccess -");
+                            }
+
+                            @Override
+                            public void onFailure(int reason) {
+                                Log.d("Msg", "removeGroup onFailure -" + reason);
+                            }
+                        });
+                    }
+                }
+            });
+        }
     }
 
     //Hacky to get android to forget previously connected devices and who was group owner.
@@ -319,6 +417,10 @@ public class SelectPeerActivity extends Activity {
         );
     }
 
+    /*
+    * SetupWidgetListeners: called once when activity is spawned. Listens for when an item
+    * in the PeerList is clicked.
+    */
     private void  SetupWidgetListeners()
     {
         ListView peerView = (ListView) findViewById(R.id.listViewPeers);

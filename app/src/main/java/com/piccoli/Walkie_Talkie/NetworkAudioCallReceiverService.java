@@ -22,7 +22,7 @@ import java.net.Socket;
  * Service that waits for calls to it's socket port.
  * Once socket is open the call is processed.
  */
-public class NetworkAudioCallReceiverService extends IntentService implements ICallService {
+public class NetworkAudioCallReceiverService extends IntentService implements IStoppable {
 
     public static final int SERVERPORT = 1090;
     boolean stopped = false;

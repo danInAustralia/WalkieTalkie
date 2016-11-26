@@ -5,12 +5,15 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -19,7 +22,7 @@ import java.nio.charset.Charset;
 /**
  * Created by d.piccoli on 3/01/2015.
  */
-public class FullDuplexNetworkAudioCallService extends IntentService implements ICallService
+public class FullDuplexNetworkAudioCallService extends IntentService implements IStoppable
 {
     private boolean stopped = false;
     public static final int SERVERPORT = 1090;
@@ -51,11 +54,40 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
         registerReceiver(mReceiver, mIntentFilter);
         String ipAddress = bundle.getString("ip_address");
         String peerName = bundle.getString("device_name");
-        MicToIP(ipAddress, peerName);
+
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            //socket.connect(new InetSocketAddress(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT), 5000);
+            //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+
+            InetAddress address = InetAddress.getByName(ipAddress);
+            SendProtocolHeader(address, peerName, socket);
+
+
+            ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket);
+            receiveThread.run();
+            MicToIP(socket, address, peerName);
+            //new LongOperation().execute("");
+        }
+        catch(Throwable x)
+        {
+            x.printStackTrace();
+        }
+
 
     }
 
-    private void MicToIP(String ipAddress, String peerName) {
+    private void SendProtocolHeader(InetAddress ipAddress, String peerName, DatagramSocket socket) throws IOException {
+        DatagramPacket packet = null;
+
+        //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
+        //part of protocol to send <GO> to the receiver.
+        byte[] protocolStartStr = ("<GO>" + peerName + "</GO>").getBytes("UTF-8");
+        packet = new DatagramPacket(protocolStartStr, protocolStartStr.length, ipAddress, HelloRequestService.SERVERPORT);
+        socket.send(packet);
+    }
+
+    private void MicToIP(DatagramSocket socket, InetAddress ipAddress, String peerName) {
         Log.i("Audio", "Running Audio Thread");
         AudioRecord recorder = null;
         AudioTrack track = null;
@@ -68,6 +100,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
          */
         try
         {
+            DatagramPacket packet = null;
             int N = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
             recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, 48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, N*10);
             //track = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
@@ -76,17 +109,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
             //track.play();
             //setup the socket to send the microphone output
             //Socket socket = new Socket();
-            DatagramSocket socket = new DatagramSocket();
-            //socket.connect(new InetSocketAddress(HelloRequestService.SERVERIP, HelloRequestService.SERVERPORT), 5000);
-            //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-            DatagramPacket packet = null;
-            InetAddress address = InetAddress.getByName(ipAddress);
 
-            //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
-            //part of protocol to send <GO> to the receiver.
-            byte[] protocolStartStr = ("<GO>"+peerName+"</GO>").getBytes("UTF-8");
-            packet = new DatagramPacket(protocolStartStr, protocolStartStr.length, address, HelloRequestService.SERVERPORT);
-            socket.send(packet);
             /*
              * Loops until something outside of this thread stops it.
              * Reads the data from the recorder and writes it to the audio track for playback.
@@ -97,14 +120,14 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
                 N = recorder.read(buffer,0,buffer.length);
                 //write the audio to the socket.
 
-                packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, address, HelloRequestService.SERVERPORT);
+                packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, ipAddress, HelloRequestService.SERVERPORT);
                 socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
             }
 //            recorder.stop();
 //            recorder.release();
             byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
-            packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, address, HelloRequestService.SERVERPORT);
+            packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, ipAddress, HelloRequestService.SERVERPORT);
             socket.send(packet);
             socket.close();
 //            Intent stopWTIntent = new Intent();
@@ -129,6 +152,73 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
             sendBroadcast(stopWTIntent);
             //track.stop();
             //track.release();
+        }
+    }
+
+    private class LongOperation extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            return "Executed";
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+        }
+
+        @Override
+        protected void onPreExecute() {}
+
+        @Override
+        protected void onProgressUpdate(Void... values) {}
+    }
+
+    public void ReceiveAudioAndPlayOnLocalAudioDevice(DatagramSocket callSocket) {
+        boolean firstIteration = true;
+        short[] shortArr;
+        int ix = 0;
+
+        int N = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        //reads packets from the network and sends to the speaker
+        byte[] bytes = new byte[512];
+        DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length);
+        int n = 0;//number of samples written
+        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 48000,
+                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N * 2, AudioTrack.MODE_STREAM);
+        boolean containsStop = false;
+        try {
+            while (!stopped) {
+                callSocket.receive(receivedPacket);
+                bytes = receivedPacket.getData();
+                String s = new String(bytes, "UTF-8");
+                containsStop = s.contains("<STOP>");
+
+                if (containsStop) {
+                    stopped = true;
+                    //SendEndCallBroadcast();
+
+                } else//convert to packet to audio and play it.
+                {
+                    shortArr = Processor.ByteArrayToShortArray(bytes);
+
+                    n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
+                    if (firstIteration) {
+                        track.play();
+                        firstIteration = false;
+                    }
+                }
+            }
+
+
+            //callSocket.close();
+            //track.release();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            callSocket.close();
+            track.release();
+            //SendEndCallBroadcast();
         }
     }
 

@@ -72,7 +72,17 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
                 //success logic: get the IP of the wifi direct group owner
                 @Override
                 public void onSuccess() {
-                    config.groupOwnerIntent = 15;
+//                    mManager.stopPeerDiscovery(mChannel, new WifiP2pManager.ActionListener() {
+//                        @Override
+//                        public void onSuccess() {
+//
+//                        }
+//
+//                        @Override
+//                        public void onFailure(int i) {
+//
+//                        }
+//                    });
                 }
 
                 @Override
@@ -80,6 +90,7 @@ public class WifiDirectConnectableDevice implements IConnectableDevice {
                     //failure logic
                 }
             });
+
         }
     }
 }

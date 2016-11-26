@@ -98,7 +98,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
 
             if (networkInfo.isConnected()) {
                 connected = true;
-                // We are connected with the other device, request connection
+                // We have a wifi-direct connection with the other device, request connection
                 // info to find group owner IP
 
                 mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
@@ -112,6 +112,9 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             else
             {
                 connected = false;
+
+                //call something that handles lost connection
+                mActivity.handleLostConnection();
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
