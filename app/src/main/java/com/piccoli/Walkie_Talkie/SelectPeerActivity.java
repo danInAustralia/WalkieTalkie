@@ -30,7 +30,9 @@ import java.util.ArrayList;
 public class SelectPeerActivity extends Activity {
     String thisDeviceName;
     IConnectableDevice selectedDevice;
+    boolean ignoreDiscovery = false;
     ArrayList<IConnectableDevice> peerDevices;
+    ArrayList<String> peerStrings;
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
     BroadcastReceiver mWifiDirectBroadcastReceiver;//registers for the events we want to know about
@@ -47,6 +49,9 @@ public class SelectPeerActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SetPeerList();//resets peerDevices instance variable
+        peerDevices = new ArrayList<IConnectableDevice>();
+        peerStrings = new ArrayList<String>();
         mIntentFilter = new IntentFilter();
         mCallEndIntentFilter = new IntentFilter();
 
@@ -138,38 +143,38 @@ public class SelectPeerActivity extends Activity {
      */
     public void updatePeerList(ArrayList<IConnectableDevice> peers)
     {
-        SetPeerList();
-        ListView peerView = (ListView) findViewById(R.id.listViewPeers);
-
+        peerDevices.clear();
+        peerStrings.clear();
 
         for(IConnectableDevice additionalPeer : peers)
         {
             peerDevices.add(additionalPeer);
+            peerStrings.add(additionalPeer.Name());
         }
-        PopulatePeerView(peerView);
+        PopulatePeerView();
 
     }
+
+    //public void clearPeerView
 
     /*
     draws the list of peers in the ListView
      */
-    private void PopulatePeerView(ListView peerView) {
-        //convert peerDevices to strings
-        ArrayList<String> peerStrings = new ArrayList<String>();
-        for(IConnectableDevice dev : peerDevices)
-        {
-            peerStrings.add(dev.Name()  );
+    private void PopulatePeerView() {
+        if (peerDevices.size() == 0 || !ignoreDiscovery) {
+            ListView peerView = (ListView) findViewById(R.id.listViewPeers);
+
+            //populate the ListView
+            ArrayAdapter adapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_list_item_1, peerStrings);
+
+            int numberOfPeers = peerDevices.size();
+            updateStatus(numberOfPeers + " peer(s) found.");
+            Toast.makeText(SelectPeerActivity.this, numberOfPeers + " peer(s) found.", Toast.LENGTH_SHORT).show();
+
+            peerView.setAdapter(adapter);
+            peerView.deferNotifyDataSetChanged();
         }
-
-        //populate the ListView
-        ArrayAdapter adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_list_item_1, peerStrings);
-
-        int numberOfPeers = peerDevices.size();
-        updateStatus(numberOfPeers + " peer(s) found.");
-        Toast.makeText(SelectPeerActivity.this, numberOfPeers + " peer(s) found.", Toast.LENGTH_SHORT).show();
-
-        peerView.setAdapter(adapter);
     }
 
     /*
@@ -205,7 +210,9 @@ public class SelectPeerActivity extends Activity {
         }
 
         //stop discovery.
-
+        ignoreDiscovery = true;
+        peerDevices.clear();
+        PopulatePeerView();
 
         // 1. Instantiate an AlertDialog.Builder with its constructor
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -244,12 +251,19 @@ public class SelectPeerActivity extends Activity {
 
     // 2. Chain together various setter methods to set the dialog characteristics
 
-            builder.setMessage("Wifi connection lost")
-                    .setTitle("Wifi connection lost");
+            builder.setMessage("Wifi-direct connection lost")
+                    .setTitle("Wifi-direct connection lost");
+            builder.setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // User clicked OK button
+                }
+            });
             AlertDialog dialog = builder.create();
             dialog.show();
         }
         instigatedWifiDisconnect = false;
+        //re-initiate peer discovery
+        setupWIFI();
     }
 
     /*public void StopPeerDiscovery(){
@@ -409,7 +423,8 @@ public class SelectPeerActivity extends Activity {
 
                 @Override
                 public void onFailure(int reasonCode) {
-                    updatePeerList(new ArrayList<IConnectableDevice>());//resets the displayed list to show no peers
+                    peerDevices.clear();
+                    PopulatePeerView();
                     Toast.makeText(SelectPeerActivity.this, "Peer discovery failed "+ reasonCode, Toast.LENGTH_SHORT).show();
                     updateStatus("Peer discovery failed");
                 }
