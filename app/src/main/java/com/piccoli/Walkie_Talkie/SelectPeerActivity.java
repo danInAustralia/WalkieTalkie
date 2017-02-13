@@ -189,7 +189,7 @@ public class SelectPeerActivity extends Activity {
     {
         updateStatus("Connected over Wifi direct");
 
-        if(false)//(callInitiator)
+        if(callInitiator)
         {//start a call as client if the peer was selected on this device.
             updateStatus("Connecting to " + ipAddress);
             //start in-call activity
@@ -213,32 +213,32 @@ public class SelectPeerActivity extends Activity {
         ignoreDiscovery = true;
         peerDevices.clear();
         PopulatePeerView();
-
-        // 1. Instantiate an AlertDialog.Builder with its constructor
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-// 2. Chain together various setter methods to set the dialog characteristics
-
-        builder.setMessage("Click to disconnect")
-                .setTitle("Wifi direct connected");
-
-        builder.setPositiveButton("Disconnect", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-
-                instigatedWifiDisconnect = true;
-                disconnect();
-                // User clicked OK button
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User cancelled the dialog
-            }
-        });
-
-// 3. Get the AlertDialog from create()
-        AlertDialog dialog = builder.create();
-        dialog.show();
+//
+//        // 1. Instantiate an AlertDialog.Builder with its constructor
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//
+//// 2. Chain together various setter methods to set the dialog characteristics
+//
+//        builder.setMessage("Click to disconnect")
+//                .setTitle("Wifi direct connected");
+//
+//        builder.setPositiveButton("Disconnect", new DialogInterface.OnClickListener() {
+//            public void onClick(DialogInterface dialog, int id) {
+//
+//                instigatedWifiDisconnect = true;
+//                disconnect();
+//                // User clicked OK button
+//            }
+//        });
+//        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+//            public void onClick(DialogInterface dialog, int id) {
+//                // User cancelled the dialog
+//            }
+//        });
+//
+//// 3. Get the AlertDialog from create()
+//        AlertDialog dialog = builder.create();
+//        dialog.show();
     }
 
 

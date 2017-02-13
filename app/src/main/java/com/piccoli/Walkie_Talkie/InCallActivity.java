@@ -42,6 +42,7 @@ public class InCallActivity extends Activity {
         mCallEndIntentFilter = new IntentFilter();
         mCallEndIntentFilter.addAction("WT.END_CALL_COMPLETE");//listens for our custom end call intent
         callEndedBR = new CallEndedForInCallBroadcastReceiver(this);
+        registerReceiver(callEndedBR, mCallEndIntentFilter);
 
         setContentView(R.layout.activity_in_call);
         TextView callerText = (TextView) findViewById(R.id.textViewCaller);
@@ -65,7 +66,7 @@ public class InCallActivity extends Activity {
         Intent stopWTIntent = new Intent();
         stopWTIntent.setAction("WT.END_CALL");
         sendBroadcast(stopWTIntent);
-        finish();
+        //finish();
     }
 
     public void Stop()

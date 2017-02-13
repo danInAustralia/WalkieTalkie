@@ -1,5 +1,6 @@
 package com.piccoli.Walkie_Talkie;
 
+import android.content.Context;
 import android.content.Intent;
 import android.app.Activity;
 import android.media.AudioFormat;
@@ -17,7 +18,9 @@ import java.net.DatagramSocket;
 public class ReceiveSocketAudioThread implements Runnable
 {
     DatagramSocket callScoket;
-    public ReceiveSocketAudioThread(DatagramSocket socket)
+    Context context;
+
+    public ReceiveSocketAudioThread(DatagramSocket socket, Context context)
     {
         callScoket = socket;
     }
@@ -47,18 +50,21 @@ public class ReceiveSocketAudioThread implements Runnable
                 if(containsStop)
                 {
                     stopped = true;
-
+                    //broadcast an END_CALL event
+                    Intent stopWTIntent = new Intent();
+                    stopWTIntent.setAction("WT.END_CALL");
+                    context.sendBroadcast(stopWTIntent);
 
                 }
                 else//convert to packet to audio and play it.
                 {
-                    shortArr = ByteArrayToShortArray(bytes);
+                    /*shortArr = ByteArrayToShortArray(bytes);
 
                     n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
                     if (firstIteration) {
                         track.play();
                         firstIteration = false;
-                    }
+                    }*/
                 }
             }
         }catch (IOException e) {

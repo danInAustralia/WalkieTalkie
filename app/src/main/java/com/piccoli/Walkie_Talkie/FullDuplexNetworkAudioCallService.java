@@ -64,7 +64,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
             SendProtocolHeader(address, peerName, socket);
 
 
-            ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket);
+            ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket, this.getBaseContext());
             receiveThread.run();
             MicToIP(socket, address, peerName);
             //new LongOperation().execute("");

@@ -10,6 +10,7 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -23,7 +24,7 @@ import java.net.Socket;
  * Once socket is open the call is processed.
  */
 public class NetworkAudioCallReceiverService extends IntentService implements IStoppable {
-
+    DatagramSocket socket;
     public static final int SERVERPORT = 1090;
     boolean stopped = false;
     InetAddress addressOfPeer = null;
@@ -48,7 +49,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
             registerReceiver(mReceiver, mIntentFilter);
 
             byte[] data = new byte[1024];
-            DatagramSocket socket = new DatagramSocket(SERVERPORT);
+            socket = new DatagramSocket(SERVERPORT);
             DatagramPacket packet = new DatagramPacket(data, data.length);
 
             packet.getAddress();
@@ -138,12 +139,11 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
         if(addressOfPeer != null) {
             //therefore, we must send "STOP" to the peer.
             try {
-                DatagramSocket socket = new DatagramSocket(SERVERPORT);
-                byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
-                DatagramPacket packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, addressOfPeer, HelloRequestService.SERVERPORT);
-                //callSocket.send(packet);
+                SocketAndAddress sad = new SocketAndAddress(socket, addressOfPeer);
+                SendEndInBackground sendEndTask = new SendEndInBackground();
+                sendEndTask.execute(sad);
                 SendEndCallBroadcast();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -157,3 +157,4 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
         sendBroadcast(stopWTIntent);
     }
 }
+
