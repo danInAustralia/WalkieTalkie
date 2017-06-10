@@ -63,11 +63,11 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
             InetAddress address = InetAddress.getByName(ipAddress);
             SendProtocolHeader(address, peerName, socket);
 
-
+            //start the receive thread
             ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket, this.getBaseContext());
-            receiveThread.run();
+            new Thread(receiveThread).start();
+            //continue with the send part
             MicToIP(socket, address, peerName);
-            //new LongOperation().execute("");
         }
         catch(Throwable x)
         {
@@ -89,7 +89,7 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
 
     private void MicToIP(DatagramSocket socket, InetAddress ipAddress, String peerName) {
         Log.i("Audio", "Running Audio Thread");
-        AudioRecord recorder = null;
+        AudioRecord microphone = null;
         AudioTrack track = null;
         short[] buffer  = new short[256];
         int ix = 0;
@@ -102,10 +102,10 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
         {
             DatagramPacket packet = null;
             int N = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, 48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, N*10);
+            microphone = new AudioRecord(MediaRecorder.AudioSource.MIC, 48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, N*10);
             //track = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
             //        AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N*10, AudioTrack.MODE_STREAM);
-            recorder.startRecording();
+            microphone.startRecording();
             //track.play();
             //setup the socket to send the microphone output
             //Socket socket = new Socket();
@@ -116,13 +116,16 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
              */
             while(!stopped)
             {
-                //Log.i("Map", "Writing new data to buffer");
-                N = recorder.read(buffer,0,buffer.length);
-                //write the audio to the socket.
 
+
+                //Log.i("Map", "Writing new data to buffer");
+                N = microphone.read(buffer,0,buffer.length);
+
+                //write the audio to the socket.
                 packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, ipAddress, HelloRequestService.SERVERPORT);
                 socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
+
             }
 //            recorder.stop();
 //            recorder.release();
@@ -144,8 +147,8 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
          */
         finally
         {
-            recorder.stop();
-            recorder.release();
+            microphone.stop();
+            microphone.release();
 
             Intent stopWTIntent = new Intent();
             stopWTIntent.setAction("WT.END_CALL_COMPLETE");

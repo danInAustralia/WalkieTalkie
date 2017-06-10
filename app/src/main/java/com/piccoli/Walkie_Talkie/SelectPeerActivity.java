@@ -45,6 +45,8 @@ public class SelectPeerActivity extends Activity {
     Intent makeCallIntent = null;
     Intent receiveCallIntent = null;
     boolean finishThis = false;
+    ArrayAdapter peersAdapter;
+    ListView peerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -162,17 +164,23 @@ public class SelectPeerActivity extends Activity {
      */
     private void PopulatePeerView() {
         if (peerDevices.size() == 0 || !ignoreDiscovery) {
-            ListView peerView = (ListView) findViewById(R.id.listViewPeers);
-
-            //populate the ListView
-            ArrayAdapter adapter = new ArrayAdapter<String>(this,
-                    android.R.layout.simple_list_item_1, peerStrings);
+            if(peerView == null) {
+                peerView = (ListView) findViewById(R.id.listViewPeers);
+                //populate the ListView
+                peersAdapter = new ArrayAdapter<String>(this,
+                        android.R.layout.simple_list_item_1, peerStrings);
+                peerView.setAdapter(peersAdapter);
+            }
+            else
+            {
+                peersAdapter.clear();
+                peersAdapter.addAll(peerStrings);
+            }
 
             int numberOfPeers = peerDevices.size();
             updateStatus(numberOfPeers + " peer(s) found.");
             Toast.makeText(SelectPeerActivity.this, numberOfPeers + " peer(s) found.", Toast.LENGTH_SHORT).show();
 
-            peerView.setAdapter(adapter);
             peerView.deferNotifyDataSetChanged();
         }
     }
@@ -444,13 +452,20 @@ public class SelectPeerActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
                 callInitiator = true;
-                updateStatus("Item " + position + " clicked");
-                IConnectableDevice deviceToConnect = peerDevices.get(position);
-                selectedDevice = deviceToConnect;
+                if(peerDevices.size() > position) {
+                    updateStatus("Item " + position + " clicked");
+                    IConnectableDevice deviceToConnect = peerDevices.get(position);
+                    selectedDevice = deviceToConnect;
 
-                //initiate the connection: does not start sending over the socket until
-                //wifi broadcast receiver figures out the ip address.
-                deviceToConnect.InitiateConnection();
+                    //initiate the connection: does not start sending over the socket until
+                    //wifi broadcast receiver figures out the ip address.
+                    deviceToConnect.InitiateConnection();
+                }
+                else{
+                    updateStatus("Peer is no longer in range");
+                    System.out.print("Log: selected peer no longer in range. Refreshing...");
+                    peerStrings.clear();
+                }
             }
         });
     }
