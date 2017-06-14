@@ -22,7 +22,7 @@ public class CallEndedBroadcastReceiver extends BroadcastReceiver {
 
         if (action == "WT.END_CALL_COMPLETE") {
             mActivity.EndCall();
-            mActivity.setupWIFI();
+            //mActivity.start_peer_discovery();
         }
     }
 }
