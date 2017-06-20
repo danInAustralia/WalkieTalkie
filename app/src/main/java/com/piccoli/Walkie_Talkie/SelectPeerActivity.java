@@ -7,10 +7,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -361,7 +363,7 @@ public class SelectPeerActivity extends Activity {
 
         StopWifiDirect();
         //if(instigated call), need to restart the receiver server.
-        if(instigatedCall) {
+        if(!instigatedCall) {
             receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
             startService(receiveCallIntent);
         }
@@ -372,6 +374,7 @@ public class SelectPeerActivity extends Activity {
     }
 
     public void StopWifiDirect() {
+        //closes physical connection
         mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {

@@ -107,7 +107,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
 
                 if (containsStop) {
                     stopped = true;
-                    SendEndCallBroadcast();
+                    //SendEndCallBroadcast();
 
                 } else//convert to packet to audio and play it.
                 {
@@ -142,7 +142,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
                 SocketAndAddress sad = new SocketAndAddress(socket, addressOfPeer);
                 SendEndInBackground sendEndTask = new SendEndInBackground();
                 sendEndTask.execute(sad);
-                SendEndCallBroadcast();
+                //SendEndCallBroadcast();
             } catch (Exception e) {
                 e.printStackTrace();
             }
