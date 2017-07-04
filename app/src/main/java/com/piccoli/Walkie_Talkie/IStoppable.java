@@ -5,5 +5,5 @@ package com.piccoli.Walkie_Talkie;
  */
 public interface IStoppable {
 
-    public void Stop();
+    public void Stop(boolean instigatedEnd);
 }

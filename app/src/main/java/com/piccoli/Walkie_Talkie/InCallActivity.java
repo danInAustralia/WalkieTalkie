@@ -64,9 +64,9 @@ public class InCallActivity extends Activity {
     public void btnEndPressed(View view)
     {
         Intent stopWTIntent = new Intent();
-        stopWTIntent.setAction("WT.END_CALL");
+        stopWTIntent.setAction("WT.END_CALL_INSTIGATED");
         sendBroadcast(stopWTIntent);
-        //finish();
+        finish();
     }
 
     public void Stop()

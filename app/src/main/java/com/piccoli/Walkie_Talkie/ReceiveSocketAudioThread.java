@@ -22,6 +22,7 @@ public class ReceiveSocketAudioThread implements Runnable
 
     public ReceiveSocketAudioThread(DatagramSocket socket, Context context)
     {
+        this.context = context;
         callScoket = socket;
     }
 
@@ -50,28 +51,35 @@ public class ReceiveSocketAudioThread implements Runnable
                 if(containsStop)
                 {
                     stopped = true;
-                    //broadcast an END_CALL event
-                    Intent stopWTIntent = new Intent();
-                    stopWTIntent.setAction("WT.END_CALL");
-                    context.sendBroadcast(stopWTIntent);
 
                 }
                 else//convert to packet to audio and play it.
                 {
-                    /*shortArr = ByteArrayToShortArray(bytes);
+                    shortArr = ByteArrayToShortArray(bytes);
 
                     n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
                     if (firstIteration) {
                         track.play();
                         firstIteration = false;
-                    }*/
+                    }
                 }
             }
         }catch (IOException e) {
             e.printStackTrace();
         } finally {
+            callScoket.close();
             track.release();
+            SendEndCallBroadcast();
         }
+    }
+
+    public void SendEndCallBroadcast()
+    {
+        //broadcast an END_CALL event
+        Intent stopWTIntent = new Intent();
+        stopWTIntent.setAction("WT.END_CALL");
+
+        context.sendBroadcast(stopWTIntent);
     }
 
     short[] ByteArrayToShortArray(byte[] input)

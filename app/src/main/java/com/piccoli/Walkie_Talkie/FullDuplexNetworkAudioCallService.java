@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 public class FullDuplexNetworkAudioCallService extends IntentService implements IStoppable
 {
     private boolean stopped = false;
+    private boolean instigatedEnd = false;
     public static final int SERVERPORT = 1090;
 
     BroadcastReceiver mReceiver;//registers for the events we want to know about
@@ -38,8 +39,9 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
 
     }
 
-    public void Stop()
+    public void Stop(boolean instigatedEnd)
     {
+        this.instigatedEnd = instigatedEnd;
         stopped = true;
     }
 
@@ -48,7 +50,9 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
         Bundle bundle = intent.getExtras();
 
         IntentFilter mIntentFilter = new IntentFilter();
-        mIntentFilter.addAction("WT.END_CALL");//listens for our custom end call intent
+        //listens for our custom end call intents
+        mIntentFilter.addAction("WT.END_CALL");
+        mIntentFilter.addAction("WT.END_CALL_INSTIGATED");
 
         mReceiver = new CallStatusBroadcastReceiver(this);
         registerReceiver(mReceiver, mIntentFilter);
@@ -127,16 +131,14 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
                 //track.write(buffer, 0, buffer.length);
 
             }
-//            recorder.stop();
-//            recorder.release();
-            byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
-            packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, ipAddress, HelloRequestService.SERVERPORT);
-            socket.send(packet);
+            //this should only send a stop message over the netowrk, if the stop button was
+            //pressed on this end
+            if(instigatedEnd) {
+                byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
+                packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, ipAddress, HelloRequestService.SERVERPORT);
+                socket.send(packet);
+            }
             socket.close();
-//            Intent stopWTIntent = new Intent();
-//            stopWTIntent.setAction("WT.END_CALL_COMPLETE");
-//            sendBroadcast(stopWTIntent);
-            //out.write("<STOP>".getBytes(Charset.forName("UTF-8")), 0, 7);
         }
         catch(Throwable x)
         {
@@ -175,54 +177,6 @@ public class FullDuplexNetworkAudioCallService extends IntentService implements 
 
         @Override
         protected void onProgressUpdate(Void... values) {}
-    }
-
-    public void ReceiveAudioAndPlayOnLocalAudioDevice(DatagramSocket callSocket) {
-        boolean firstIteration = true;
-        short[] shortArr;
-        int ix = 0;
-
-        int N = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        //reads packets from the network and sends to the speaker
-        byte[] bytes = new byte[512];
-        DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length);
-        int n = 0;//number of samples written
-        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 48000,
-                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, N * 2, AudioTrack.MODE_STREAM);
-        boolean containsStop = false;
-        try {
-            while (!stopped) {
-                callSocket.receive(receivedPacket);
-                bytes = receivedPacket.getData();
-                String s = new String(bytes, "UTF-8");
-                containsStop = s.contains("<STOP>");
-
-                if (containsStop) {
-                    stopped = true;
-                    //SendEndCallBroadcast();
-
-                } else//convert to packet to audio and play it.
-                {
-                    shortArr = Processor.ByteArrayToShortArray(bytes);
-
-                    n = track.write(shortArr, 0, shortArr.length);//sends to default speaker.
-                    if (firstIteration) {
-                        track.play();
-                        firstIteration = false;
-                    }
-                }
-            }
-
-
-            //callSocket.close();
-            //track.release();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            callSocket.close();
-            track.release();
-            //SendEndCallBroadcast();
-        }
     }
 
     boolean BufferContainsGreaterThan256(short[] buffer)

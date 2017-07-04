@@ -84,7 +84,8 @@ public class SelectPeerActivity extends Activity {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
+        //disconnect any existing physical layer connections.
+        //disconnect();
 
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_initiate_hello);
@@ -230,7 +231,7 @@ public class SelectPeerActivity extends Activity {
             callInitiator = false;
         }
 
-
+        //if not the call initiator, the call will be handled by the NetworkAudioCallReceiverService
 //
 //        // 1. Instantiate an AlertDialog.Builder with its constructor
 //        AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -440,6 +441,7 @@ public class SelectPeerActivity extends Activity {
     /* /Discovers peers for use with wifi direct */
     public void start_peer_discovery()
     {
+        final int tryCounter = 0;
         //sets off the process to discover wifi peers but does not return peer list.
         mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
                 //notifies you that the discovery process succeeded.
@@ -456,6 +458,9 @@ public class SelectPeerActivity extends Activity {
                     //PopulatePeerView();
                     Toast.makeText(SelectPeerActivity.this, "Peer discovery failed "+ reasonCode, Toast.LENGTH_SHORT).show();
                     updateStatus("Peer discovery failed");
+                    if(tryCounter < 3) {
+                        start_peer_discovery();
+                    }
                 }
             }
         );

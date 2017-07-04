@@ -32,9 +32,13 @@ public class CallStatusBroadcastReceiver extends BroadcastReceiver{
         {
             String action = intent.getAction();
 
-            if (action == "WT.END_CALL")
+            if (action == "WT.END_CALL_INSTIGATED")
             {
-                callService.Stop();
+                callService.Stop(true);
+            }
+            if(action == "WT.END_CALL")
+            {
+                callService.Stop(true);
             }
         }
 }
