@@ -261,7 +261,7 @@ public class SelectPeerActivity extends Activity {
     }
 
 
-
+    //this is called after an WIFI_P2P_CONNECTION_CHANGED_ACTION
     public void handleLostConnection()
     {
         if(!instigatedWifiDisconnect)
@@ -348,8 +348,10 @@ public class SelectPeerActivity extends Activity {
         //config.groupOwnerIntent = 15;
     }
 
+    ///This is called with the CALL_END_COMPLETE event
     public void EndCall()
     {
+        //Thread.sleep(1000);
         Toast.makeText(SelectPeerActivity.this, "Call Ended", Toast.LENGTH_SHORT).show();
         updateStatus("Wifi direct call ended");
         //this.finish();

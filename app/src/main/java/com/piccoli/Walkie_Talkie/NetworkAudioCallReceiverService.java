@@ -61,6 +61,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
 
             socket.receive(packet);//locks until an initial packet is received
             addressOfPeer = packet.getAddress();
+            int port = packet.getPort();
             String packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
             boolean containsGo = packetText.contains("<GO>");
 
@@ -83,7 +84,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
                 ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket, this.getBaseContext());
                 new Thread(receiveThread).start();
                 //continue with the send part
-                MicToIP(socket, addressOfPeer, deviceName);
+                MicToIP(socket, addressOfPeer, deviceName, port);
             }
         }
         catch(Throwable e)
@@ -93,7 +94,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
 
     }
 
-    private void MicToIP(DatagramSocket socket, InetAddress ipAddress, String peerName) {
+    private void MicToIP(DatagramSocket socket, InetAddress ipAddress, String peerName, int port) {
         Log.i("Audio", "Running Audio Thread");
         AudioRecord microphone = null;
         AudioTrack track = null;
@@ -128,7 +129,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
                 N = microphone.read(buffer,0,buffer.length);
 
                 //write the audio to the socket.
-                packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, ipAddress, HelloRequestService.SERVERPORT);
+                packet = new DatagramPacket(ShortToByteArray(buffer), buffer.length * 2, ipAddress, port);
                 socket.send(packet);
                 //track.write(buffer, 0, buffer.length);
 
@@ -137,7 +138,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
 //            recorder.release();
             if(instigatedEnd) {
                 byte[] protocolEndStr = "<STOP>".getBytes("UTF-8");
-                packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, ipAddress, HelloRequestService.SERVERPORT);
+                packet = new DatagramPacket(protocolEndStr, protocolEndStr.length, ipAddress, port);
                 socket.send(packet);
             }
             socket.close();
