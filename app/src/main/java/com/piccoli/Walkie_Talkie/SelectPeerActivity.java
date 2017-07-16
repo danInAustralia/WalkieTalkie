@@ -43,7 +43,7 @@ public class SelectPeerActivity extends Activity {
     boolean callInitiator = false;
     boolean instigatedWifiDisconnect = false;
     Intent makeCallIntent = null;
-    Intent receiveCallIntent = null;
+    //Intent receiveCallIntent = null;
     boolean finishThis = false;
     boolean instigatedCall = false;
     ArrayAdapter peersAdapter;
@@ -97,8 +97,8 @@ public class SelectPeerActivity extends Activity {
 
         //start server
         //TODO: move this to a 'start on boot' service.
-        receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
-        startService(receiveCallIntent);
+        //receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
+        //startService(receiveCallIntent);
     }
 
     public void SetDeviceName(String devName)
@@ -366,10 +366,10 @@ public class SelectPeerActivity extends Activity {
 
         StopWifiDirect();
         //if(instigated call), need to restart the receiver server.
-        if(!instigatedCall) {
-            receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
-            startService(receiveCallIntent);
-        }
+        //if(!instigatedCall) {
+        //    receiveCallIntent = new Intent(Intent.ACTION_SYNC, null, this, NetworkAudioCallReceiverService.class);
+        //    startService(receiveCallIntent);
+        //}
         instigatedCall = false;
         //resume searching for potential peers.
         ignoreDiscovery = false;

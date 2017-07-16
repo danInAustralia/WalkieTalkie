@@ -29,6 +29,7 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
     DatagramSocket socket;
     public static final int SERVERPORT = 1090;
     boolean stopped = false;
+    boolean busy = false;
     private boolean instigatedEnd = false;
     InetAddress addressOfPeer = null;
 
@@ -57,34 +58,40 @@ public class NetworkAudioCallReceiverService extends IntentService implements IS
             socket = new DatagramSocket(SERVERPORT);
             DatagramPacket packet = new DatagramPacket(data, data.length);
 
-            packet.getAddress();
+            while(true) {
+                //listen for connection.
+                socket.receive(packet);//locks until an initial packet is received
+                if(!busy) {
+                    addressOfPeer = packet.getAddress();
+                    int port = packet.getPort();
+                    String packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
+                    boolean containsGo = packetText.contains("<GO>");
 
-            socket.receive(packet);//locks until an initial packet is received
-            addressOfPeer = packet.getAddress();
-            int port = packet.getPort();
-            String packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
-            boolean containsGo = packetText.contains("<GO>");
-
-            if(containsGo)
-            {
-                //get the caller info from the network
+                    if (containsGo) {
+                        //get the caller info from the network
 //                packetText = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
 //                String peerName = packetText.substring(packetText.indexOf("<peerName>") + "<peerName>".length(),
 //                                    packetText.indexOf("</peerName>"));
-                String deviceName = packetText.substring(
-                        packetText.indexOf("<GO>") + "<GO>".length(), packetText.indexOf("</GO>"));
-                Intent inCallIntent = new Intent(this, InCallActivity.class);
-                inCallIntent.putExtra("ip_address", "NA");
-                inCallIntent.putExtra("initiator", "false");
-                inCallIntent.putExtra("peer_name", deviceName);
-                inCallIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(inCallIntent);
+                        String deviceName = packetText.substring(
+                                packetText.indexOf("<GO>") + "<GO>".length(), packetText.indexOf("</GO>"));
+                        Intent inCallIntent = new Intent(this, InCallActivity.class);
+                        inCallIntent.putExtra("ip_address", "NA");
+                        inCallIntent.putExtra("initiator", "false");
+                        inCallIntent.putExtra("peer_name", deviceName);
+                        inCallIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(inCallIntent);
 
-                //start the receive part.
-                ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket, this.getBaseContext());
-                new Thread(receiveThread).start();
-                //continue with the send part
-                MicToIP(socket, addressOfPeer, deviceName, port);
+                        //start the receive part.
+                        ReceiveSocketAudioThread receiveThread = new ReceiveSocketAudioThread(socket, this.getBaseContext());
+                        new Thread(receiveThread).start();
+                        //continue with the send part
+                        MicToIP(socket, addressOfPeer, deviceName, port);
+                    }
+                }
+                else
+                {
+                    //send back busy message.
+                }
             }
         }
         catch(Throwable e)
