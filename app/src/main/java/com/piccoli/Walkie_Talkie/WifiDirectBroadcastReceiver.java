@@ -21,6 +21,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
     private WifiP2pManager.Channel mChannel;
     private SelectPeerActivity mActivity;
     private boolean connected = false;
+    private boolean initiated = false;
 
     public WifiDirectBroadcastReceiver(WifiP2pManager manager,
                                        WifiP2pManager.Channel channel,
@@ -96,25 +97,33 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             NetworkInfo networkInfo = (NetworkInfo) intent
                     .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
-            if (networkInfo.isConnected()) {
-                connected = true;
-                // We have a wifi-direct connection with the other device, request connection
-                // info to find group owner IP
+            if (networkInfo.isConnected())
+            {
+                    connected = true;
+                    // We have a wifi-direct connection with the other device, request connection
+                    // info to find group owner IP
 
-                mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
-                    @Override
-                    public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
-                        String ipAddress = wifiP2pInfo.groupOwnerAddress.getHostAddress();
-                        mActivity.startAudioCapture(ipAddress);
-                    }
-                });
+                    mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
+                        @Override
+                        public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+                            String ipAddress = wifiP2pInfo.groupOwnerAddress.getHostAddress();
+                            //only call this if explicitly asked for connection.
+                            //need some way of figuring out if this is an already established connection
+                            mActivity.initiateCall(ipAddress);
+                        }
+                    });
             }
             else
             {
                 connected = false;
 
-                //call something that handles lost connection
-                mActivity.handleLostConnection();
+                if(initiated) {
+                    //call something that handles lost connection
+                    mActivity.handleLostConnection();
+                }
+                else{
+                    initiated= true;
+                }
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
