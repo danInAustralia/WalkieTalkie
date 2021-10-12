@@ -320,6 +320,7 @@ public class SelectPeerActivity extends Activity {
         ignoreDiscovery = false;
         disconnect();
         //setupServiceDiscoveryListeners();//start_peer_discovery();
+        setupServiceDiscoveryListeners();
     }
 
     public void StopWifiDirect() {
