@@ -37,6 +37,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
+            /*
             ArrayList<IConnectableDevice> peers = new ArrayList();
             peers.clear();
 
@@ -55,7 +56,9 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             }
             mActivity.updateStatus(peers.size() + " peers found.");
 
-            mActivity.updatePeerList(peers);
+            mActivity.updatePeerList(peers); Peers are now detected on bonjour service callbacks
+
+             */
         }
     };
 
@@ -66,7 +69,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
     public void onReceive(Context context, Intent intent)
     {
         String action = intent.getAction();
-        if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
+        /*if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             // Check to see if Wi-Fi is enabled and notify appropriate activity
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED)
@@ -83,13 +86,13 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver{
             // fired when list of peers changes
             // Call WifiP2pManager.requestPeers() to get a list of current peers
             if(!connected) {
-                Log.d("Hello", "p2p change");
+                Log.d("Hello", "p2p peers changed");
                 if (mManager != null) {
                     mActivity.updateStatus("Searching for peers...");
                     mManager.requestPeers(mChannel, peerListListener);
                 }
             }
-        } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
+        } else*/ if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             // Respond to new connection or disconnections
             if (mManager == null) {
                 return;

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,13 +9,43 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"  tools:context=".SelectPeerActivity">
 
-        <TextView android:id="@+id/textViewInstructions"
-            android:text="Nearby Walkies"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#1b307d"
-            android:textSize="24dp" />
-        <ListView android:id="@+id/listViewPeers"
+    <TextView
+        android:id="@+id/textViewInstructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Walkie Talkie"
+        android:textColor="#1b307d"
+        android:textSize="24dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal"
+        >
+        <EditText
+            android:id="@+id/myNameEdit"
+            android:layout_width="0dp"
+            android:layout_weight="3"
+            android:layout_height="match_parent"
+            android:contentDescription="let your friends know who you are"
+            android:hint="Your Name"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textSize="30sp"
+            android:typeface="normal"
+            android:imeOptions="actionDone"
+            android:inputType="text"
+            android:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/peerSearchButton"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:onClick="searchButtonPressed"
+            android:layout_weight="1"
+            android:src="@drawable/abc_ic_search_api_mtrl_alpha" />
+    </LinearLayout>
+
+    <ListView android:id="@+id/listViewPeers"
             android:layout_below="@+id/textViewInstructions"
             android:layout_width="fill_parent"
             android:layout_height="0dp"
