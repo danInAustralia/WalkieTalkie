@@ -119,6 +119,7 @@ public class SelectPeerActivity extends Activity {
         //SetPeerList();
     }
 
+    /// Broadcast the service availability
     private void startRegistration(String user) {
         //  Create a string map containing information about your service.
         Map record = new HashMap();
